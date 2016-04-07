@@ -85,19 +85,18 @@
 (defvar epresent--org-file nil
   "Temporary Org-mode file used when a narrowed region.")
 
-(defcustom epresent-text-scale 400
-  "Height for the text size when presenting."
-  :type 'number
-  :group 'epresent)
-
 (defvar epresent-overlays nil)
-
 (defvar epresent-inline-image-overlays nil)
 (defvar epresent-src-fontify-natively nil)
 (defvar epresent-hide-emphasis-markers nil)
 (defvar epresent-outline-ellipsis nil)
 (defvar epresent-pretty-entities nil)
 (defvar epresent-page-number 0)
+
+(defcustom epresent-text-scale 400
+  "Height for the text size when presenting."
+  :type 'number
+  :group 'epresent)
 
 (defcustom epresent-format-latex-scale 4
   "A scaling factor for the size of the images generated from LaTeX."
