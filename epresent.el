@@ -75,7 +75,7 @@
 (defvar epresent--org-file nil
   "Temporary Org-mode file used when a narrowed region.")
 
-(defvar epresent-text-scale 3)
+(defvar epresent-text-size 500)
 
 (defvar epresent-overlays nil)
 
@@ -215,8 +215,6 @@ If nil then source blocks are initially hidden on slide change.")
   "Quit the current presentation."
   (interactive)
   (run-hooks 'epresent-stop-presentation-hook)
-  ;; restore the font size
-  (text-scale-adjust (/ 1 epresent-text-scale))
   (org-remove-latex-fragment-image-overlays)
   ;; restore the user's Org-mode variables
   (remove-hook 'org-src-mode-hook 'epresent-setup-src-edit)
@@ -350,8 +348,7 @@ If nil then source blocks are initially hidden on slide change.")
   (epresent-fontify))
 
 (defun epresent-setup-src-edit ()
-  (setq cursor-type 'box)
-  (text-scale-adjust epresent-text-scale))
+  (setq cursor-type 'box))
 
 (defun epresent-flash-cursor ()
   (setq cursor-type 'hollow)
@@ -450,8 +447,6 @@ If nil then source blocks are initially hidden on slide change.")
 
 (define-derived-mode epresent-mode org-mode "EPresent"
   "Lalala."
-  (text-scale-adjust 0)
-  (text-scale-adjust epresent-text-scale)
   ;; make Org-mode be as pretty as possible
   (add-hook 'org-src-mode-hook 'epresent-setup-src-edit)
   (setq epresent-inline-image-overlays org-inline-image-overlays)
@@ -471,6 +466,7 @@ If nil then source blocks are initially hidden on slide change.")
          (plist-put (copy-tree org-format-latex-options)
 		    :scale epresent-format-latex-scale)))
     (org-preview-latex-fragment '(16)))
+  (set-face-attribute 'default epresent--frame :height epresent-text-size)
   ;; fontify the buffer
   (add-to-invisibility-spec '(epresent-hide))
   ;; remove flyspell overlays
