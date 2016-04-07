@@ -145,7 +145,6 @@ If nil then source blocks are initially hidden on slide change."
   :group 'epresent)
 
 (defvar epresent-frame-level 1)
-(make-variable-frame-local 'epresent-frame-local) ;; Obsolete function?
 
 (defvar epresent-src-block-toggle-state nil)
 
