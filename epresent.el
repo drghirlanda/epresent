@@ -519,10 +519,13 @@ If nil then source blocks are initially hidden on slide change."
   (setq org-hide-pretty-entities t)
   (setq mode-line-format (epresent-get-mode-line))
   (add-hook 'org-babel-after-execute-hook 'epresent-refresh)
-  (let ((org-format-latex-options
-         (plist-put (copy-tree org-format-latex-options)
-                    :scale epresent-format-latex-scale)))
-    (org-preview-latex-fragment '(16)))
+  (condition-case ex
+      (let ((org-format-latex-options
+             (plist-put (copy-tree org-format-latex-options)
+                        :scale epresent-format-latex-scale)))
+        (org-preview-latex-fragment '(16)))
+    ('error
+     (message "Unable to imagify latex [%s]" ex)))
   (set-face-attribute 'default epresent--frame :height epresent-text-scale)
   ;; fontify the buffer
   (add-to-invisibility-spec '(epresent-hide))
