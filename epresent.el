@@ -44,24 +44,34 @@
 (require 'ox-latex)
 (require 'cl-lib)
 
+(defgroup epresent nil
+  "This is a simple presentation mode for Emacs."
+  :group 'epresent)
+
 (defface epresent-title-face
   '((t :weight bold :height 360 :underline t :inherit variable-pitch))
-  "")
+  "Face used for the title of the document during the presentation."
+  :group 'epresent)
 (defface epresent-heading-face
   '((t :weight bold :height 270 :underline t :inherit variable-pitch))
-  "")
+  "Face used for the top-level headings in the outline during the presentation."
+  :group 'epresent)
 (defface epresent-subheading-face
   '((t :weight bold :height 240 :inherit variable-pitch))
-  "")
+  "Face used for any non-top-level headings in the outline during the presentation."
+  :group 'epresent)
 (defface epresent-author-face
   '((t :height 1.6 :inherit variable-pitch))
-  "")
+  "Face used for the author of the document during the presentation."
+  :group 'epresent)
 (defface epresent-bullet-face
   '((t :weight bold :height 1.4 :underline nil :inherit variable-pitch))
-  "")
+  "Face used for bullets during the presentation."
+  :group 'epresent)
 (defface epresent-hidden-face
   '((t :invisible t))
-  "")
+  "Face used for hidden elements during the presentation."
+  :group 'epresent)
 
 (defvar epresent--frame nil
   "Frame for EPresent.")
@@ -75,7 +85,10 @@
 (defvar epresent--org-file nil
   "Temporary Org-mode file used when a narrowed region.")
 
-(defvar epresent-text-size 500)
+(defcustom epresent-text-scale 500
+  "Multiplier for the text size when presenting."
+  :type 'number
+  :group 'epresent)
 
 (defvar epresent-overlays nil)
 
@@ -84,24 +97,55 @@
 (defvar epresent-hide-emphasis-markers nil)
 (defvar epresent-outline-ellipsis nil)
 (defvar epresent-pretty-entities nil)
-(defvar epresent-format-latex-scale 4)
-(defvar epresent-hide-todos t)
-(defvar epresent-hide-tags t)
-(defvar epresent-hide-properties t)
 (defvar epresent-page-number 0)
+
+(defcustom epresent-format-latex-scale 4
+  "A scaling factor for the size of the images generated from LaTeX."
+  :type 'number
+  :group 'epresent)
+
+(defcustom epresent-hide-todos t
+  "Whether or not to hide TODOs during the presentation."
+  :type 'boolean
+  :group 'epresent)
+
+(defcustom epresent-hide-tags t
+  "Whether or not to hide tags during the presentation."
+  :type 'boolean
+  :group 'epresent)
+
+(defcustom epresent-hide-properties t
+  "Whether or not to hide properties during the presentation."
+  :type 'boolean
+  :group 'epresent)
+
+(defcustom epresent-hide-properties t
+  "Whether or not to hide properties during the presentation."
+  :type 'boolean
+  :group 'epresent)
+
+(defcustom epresent-mode-line '(:eval (int-to-string epresent-page-number))
+  "Set the mode-line format. Hides it when nil"
+  :type 'string
+  :group 'epresent)
+
+(defcustom epresent-src-blocks-visible t
+  "If non-nil source blocks are initially visible on slide change.
+If nil then source blocks are initially hidden on slide change."
+  :type 'boolean
+  :group 'epresent)
+
+(defcustom epresent-start-presentation-hook nil
+  "Hook run after starting a presentation."
+  :type 'hook
+  :group 'epresent)
+(defcustom epresent-stop-presentation-hook nil
+  "Hook run before stopping a presentation."
+  :type 'hook
+  :group 'epresent)
 
 (defvar epresent-frame-level 1)
 (make-variable-frame-local 'epresent-frame-local) ;; Obsolete function?
-
-(defvar epresent-mode-line '(:eval (int-to-string epresent-page-number))
-  "Set the mode-line format. Hides it when nil")
-
-(defvar epresent-src-blocks-visible t
-  "If non-nil source blocks are initially visible on slide change.
-If nil then source blocks are initially hidden on slide change.")
-
-(defvar epresent-start-presentation-hook nil)
-(defvar epresent-stop-presentation-hook nil)
 
 (defvar epresent-src-block-toggle-state nil)
 
@@ -168,8 +212,8 @@ If nil then source blocks are initially hidden on slide change.")
       (progn
         (epresent-goto-top-level)
         (org-narrow-to-subtree)
-        (show-all)
-        (hide-body)
+        (outline-show-all)
+        (outline-hide-body)
         (when (>= (org-reduced-level (org-current-level))
                   epresent-frame-level)
           (org-show-subtree)
@@ -196,7 +240,7 @@ If nil then source blocks are initially hidden on slide change.")
          epresent-frame-level)
       (outline-next-heading)
     (org-get-next-sibling))
-  (incf epresent-page-number)
+  (cl-incf epresent-page-number)
   (epresent-current-page))
 
 (defun epresent-previous-page ()
@@ -210,7 +254,7 @@ If nil then source blocks are initially hidden on slide change.")
       (outline-previous-heading)
     (org-get-last-sibling))
   (when (< 1 epresent-page-number)
-    (decf epresent-page-number))
+    (cl-decf epresent-page-number))
   (epresent-current-page))
 
 (defun epresent-clean-overlays (&optional start end)
@@ -478,7 +522,7 @@ If nil then source blocks are initially hidden on slide change.")
          (plist-put (copy-tree org-format-latex-options)
 		    :scale epresent-format-latex-scale)))
     (org-preview-latex-fragment '(16)))
-  (set-face-attribute 'default epresent--frame :height epresent-text-size)
+  (set-face-attribute 'default epresent--frame :height epresent-text-scale)
   ;; fontify the buffer
   (add-to-invisibility-spec '(epresent-hide))
   ;; remove flyspell overlays
@@ -493,8 +537,7 @@ If nil then source blocks are initially hidden on slide change.")
 (defun epresent-edit-text (&optional arg)
   "Write in EPresent presentation."
   (interactive "p")
-  (lexical-let
-      ((prior-cursor-type (cdr (assoc 'cursor-type (frame-parameters)))))
+  (let ((prior-cursor-type (cdr (assoc 'cursor-type (frame-parameters)))))
     (set-frame-parameter nil 'cursor-type t)
     (use-local-map epresent-edit-map)
     (set-transient-map
