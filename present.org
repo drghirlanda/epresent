@@ -10,7 +10,7 @@
 
 Simple presentations run by Emacs
 - run in Emacs
-- uses Org-mode markup
+- uses Org-mode *markup* /for text/ =and things=
 - looks pretty good
 
 ** with subheadings
