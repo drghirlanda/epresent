@@ -86,7 +86,7 @@
   "Temporary Org-mode file used when a narrowed region.")
 
 (defcustom epresent-text-scale 500
-  "Multiplier for the text size when presenting."
+  "Height for the text size when presenting."
   :type 'number
   :group 'epresent)
 
