@@ -85,7 +85,7 @@
 (defvar epresent--org-file nil
   "Temporary Org-mode file used when a narrowed region.")
 
-(defcustom epresent-text-scale 500
+(defcustom epresent-text-scale 400
   "Height for the text size when presenting."
   :type 'number
   :group 'epresent)
