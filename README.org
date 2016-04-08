@@ -13,6 +13,7 @@ Just install =epresent= from [[http://melpa.org][MELPA repository]].
 - Call =epresent-run= on an org-buffer.
 - press =t= / =1= to view the top level of the presentation
 - navigate the presentation with =n/f=, =p/b=
+- go to a specific page with =v <num> RET=
 - scroll with =k= and =l=
 - use =c= and =C= to navigate between code blocks,
   =e= to edit them, =x= to make it run,
