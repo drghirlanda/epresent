@@ -3,10 +3,11 @@
 ;; Copyright (C) 2008 Tom Tromey <tromey@redhat.com>
 ;;               2010 Eric Schulte <schulte.eric@gmail.com>
 
-;; Authors: Tom Tromey <tromey@redhat.com>, Eric Schulte <schulte.eric@gmail.com>
+;; Authors: Tom Tromey <tromey@redhat.com>, Eric Schulte <schulte.eric@gmail.com>, Lee Hinman <lee@writequit.org>
 ;; Created: 12 Jun 2008
 ;; Version: 0.1
 ;; Keywords: gui
+;; Package-Requires: ((org "8") (cl-lib "0.5"))
 
 ;; This file is not (yet) part of GNU Emacs.
 ;; However, it is distributed under the same license.
