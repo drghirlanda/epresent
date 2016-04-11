@@ -4,8 +4,9 @@
 ;;               2010 Eric Schulte <schulte.eric@gmail.com>
 
 ;; Authors: Tom Tromey <tromey@redhat.com>, Eric Schulte <schulte.eric@gmail.com>, Lee Hinman <lee@writequit.org>
+;; URL: https://github.com/dakrone/epresent
 ;; Created: 12 Jun 2008
-;; Version: 0.1
+;; Version: 1.0.0
 ;; Keywords: gui
 ;; Package-Requires: ((org "8") (cl-lib "0.5"))
 
