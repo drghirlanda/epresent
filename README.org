@@ -19,3 +19,9 @@ Just install =epresent= from [[http://melpa.org][MELPA repository]].
   =e= to edit them, =x= to make it run,
   and =s= / =S= to toggle their visibility
 - quit with =q=
+
+* Screenshot
+
+Here is a screenshot of Epresent:
+
+[[http://i.imgur.com/y2nQIZV.png][file:http://i.imgur.com/y2nQIZV.png]]
