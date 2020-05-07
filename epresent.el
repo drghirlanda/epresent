@@ -120,11 +120,6 @@
   :type 'boolean
   :group 'epresent)
 
-(defcustom epresent-hide-properties t
-  "Whether or not to hide properties during the presentation."
-  :type 'boolean
-  :group 'epresent)
-
 (defcustom epresent-mode-line '(:eval (int-to-string epresent-page-number))
   "Set the mode-line format. Hides it when nil"
   :type 'string
@@ -387,7 +382,7 @@ If nil then source blocks are initially hidden on slide change."
       (while (re-search-forward org-drawer-regexp nil t)
         (let ((beg (match-beginning 0))
               (end (re-search-forward
-                    "^[ \t]*:END:[ \r\n]*"
+                    "^[ \t]*:END:[ \r\n]"
                     (save-excursion (outline-next-heading) (point)) t)))
           (push (make-overlay beg end) epresent-overlays)
           (overlay-put (car epresent-overlays) 'invisible 'epresent-hide))))
