@@ -33,15 +33,18 @@ epresent-show-file= outside of the presentation. The filename is set
 through the property =EPRESENT_SHOW= and the file is showed by default
 to the right of the presentation buffer. It can be shown under the
 presentation by setting the property =EPRESENT_BELOW= to a non-nil
-value. For example:
+value. To hide the file again, delete the window as usual with =C-x
+0=.
 
-#+begin_example
+Here is an example:
+
+#+begin_src org :eval none
 * My slide 
   :PROPERTIES:
   :EPRESENT_SHOW: myfigure.pdf
   :EPRESENT_BELOW: t
   :END:
-#+end_example
+#+end_org
 
 Any file that can be opened in Emacs can be shown in this way.
 
