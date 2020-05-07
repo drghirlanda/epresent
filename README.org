@@ -46,7 +46,9 @@ Here is an example:
       :END:
 #+end_src
 
-Any file that can be opened in Emacs can be shown in this way.
+Any file that can be opened in Emacs can be shown in this way. For
+example, a PDF with multiple pages can be used to show more than one
+figure in a sequence.
 
 * Screenshot
 
