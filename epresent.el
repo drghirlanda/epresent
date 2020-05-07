@@ -149,6 +149,10 @@ If nil then source blocks are initially hidden on slide change."
 
 (defvar epresent-src-block-toggle-state nil)
 
+(defvar epresent-show-filename nil)
+
+(defvar epresent-show-buffer nil)
+
 (defun epresent--get-frame ()
   (unless (frame-live-p epresent--frame)
     (setq epresent--frame (make-frame '((minibuffer . nil)
@@ -466,6 +470,38 @@ If nil then source blocks are initially hidden on slide change."
   (interactive "P")
   (epresent-toggle-hide-src-blocks t))
 
+(defun epresent-show-file ()
+  "Show a file by splitting the buffer
+
+  The file name is set through the EPRESENT_SHOW property of
+  the current org-mode entry, or the one above it in the hirarchy
+  if the current entry does not set this property.
+
+  By default, the new buffer is to the right of the current
+  buffer. It can be placed below the current buffer by setting the
+  property EPRESENT_BELOW.
+
+  To hide the file, delete its window normally with C-x 0. (There
+  is no keybinding special for this because the new image buffer is
+  not in epresent-mode and a global keybinding might interfere with
+  that mode.)
+
+  The file buffer is refreshed anytime it is displayed."
+  (interactive "")
+  (setq epresent-show-filename (org-entry-get nil "EPRESENT_SHOW" t))
+  (if epresent-show-filename
+      (delete-other-windows
+       (if (org-entry-get nil "EPRESENT_BELOW" t)
+	   (split-window-below)
+	 (split-window-right))
+       (other-window 1)
+       (setq epresent-show-buffer (find-file epresent-show-filename))
+       (setq mode-line-format (epresent-get-mode-line))
+       (revert-buffer t t t)
+       (epresent-show-buffer))
+      nil) ; do nothing if image-file is nil
+  )
+
 (defvar epresent-mode-map
   (let ((map (make-keymap)))
     (suppress-keymap map)
@@ -500,6 +536,7 @@ If nil then source blocks are initially hidden on slide change."
     (define-key map "s" 'epresent-toggle-hide-src-blocks)
     (define-key map "S" 'epresent-toggle-hide-src-block)
     (define-key map "t" 'epresent-top)
+    (define-key map "i" 'epresent-show-file)
     map)
   "Local keymap for EPresent display mode.")
 
