@@ -18,7 +18,32 @@ Just install =epresent= from [[http://melpa.org][MELPA repository]].
 - use =c= and =C= to navigate between code blocks,
   =e= to edit them, =x= to make it run,
   and =s= / =S= to toggle their visibility
+- use =i= to split the window and load a file in an additional
+  buffer. See example below.
 - quit with =q=
+ 
+** Showing another file 
+
+It is sometimes useful to show an additional file. This could be done
+with the usual Emacs commands, but sometimes a more "polished" look is
+desirable in a presentation. Epresent supports splitting the window to
+show a file in a new buffer. This functionality is activated by the
+=i= key during the presentation, and it can be tested invoking =M-x
+epresent-show-file= outside of the presentation. The filename is set
+through the property =EPRESENT_SHOW= and the file is showed by default
+to the right of the presentation buffer. It can be shown under the
+presentation by setting the property =EPRESENT_BELOW= to a non-nil
+value. For example:
+
+#+begin_example
+* My slide 
+  :PROPERTIES:
+  :EPRESENT_SHOW: myfigure.pdf
+  :EPRESENT_BELOW: t
+  :END:
+#+end_example
+
+Any file that can be opened in Emacs can be shown in this way.
 
 * Screenshot
 
