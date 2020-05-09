@@ -466,7 +466,7 @@ If nil then source blocks are initially hidden on slide change."
   (epresent-toggle-hide-src-blocks t))
 
 (defun epresent-show-file ()
-  "Show a file by splitting the buffer
+  "Show a file by splitting the buffer.
 
   The file name is set through the EPRESENT_SHOW property of
   the current org-mode entry, or the one above it in the hirarchy
@@ -493,6 +493,10 @@ If nil then source blocks are initially hidden on slide change."
        (setq epresent-show-buffer (find-file epresent-show-filename))
        (setq mode-line-format (epresent-get-mode-line))
        (revert-buffer t t t)
+       (if (org-entry-get nil "EPRESENT_FIT" t)
+	   (if (string= "pdf" (file-name-extension epresent-show-filename))
+	       (pdf-view-fit-width-to-window)
+	     (image-transform-fit-to-width)))
        (epresent-show-buffer))
       nil) ; do nothing if image-file is nil
   )
