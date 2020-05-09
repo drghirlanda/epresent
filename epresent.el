@@ -45,6 +45,7 @@
 (require 'ox)
 (require 'ox-latex)
 (require 'cl-lib)
+(require 'org-superstar)
 
 (defgroup epresent nil
   "This is a simple presentation mode for Emacs."
@@ -348,18 +349,7 @@ If nil then source blocks are initially hidden on slide change."
           (overlay-put (car epresent-overlays) 'face 'epresent-subheading-face)
         (overlay-put (car epresent-overlays) 'face 'epresent-heading-face)))
     ;; fancy bullet points
-    (mapc (lambda (p)
-            (goto-char (point-min))
-            (while (re-search-forward
-                    (format "^%s\\(-\\) " (car p)) nil t)
-              (push (make-overlay (match-beginning 1) (match-end 1))
-                    epresent-overlays)
-              (overlay-put (car epresent-overlays) 'invisible 'epresent-hide)
-              (overlay-put (car epresent-overlays)
-                           'before-string
-                           (propertize (cdr p) 'face 'epresent-bullet-face))))
-          '(("[ \t]+" . "∘")
-            ("" . "•")))
+    (org-superstar-mode)
     ;; hide todos
     (when epresent-hide-todos
       (goto-char (point-min))
