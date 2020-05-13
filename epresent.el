@@ -216,7 +216,8 @@ If nil then source blocks are initially hidden on slide change."
         (outline-hide-body)
         (when (>= (org-reduced-level (org-current-level))
                   epresent-frame-level)
-          (org-show-subtree)
+	  (org-show-subtree)
+	  (org-set-visibility-according-to-property t) ;; folds children
           (let ((epresent-src-block-toggle-state
                  (if epresent-src-blocks-visible :show :hide)))
             (epresent-toggle-hide-src-blocks))))
@@ -256,6 +257,21 @@ If nil then source blocks are initially hidden on slide change."
   (when (> epresent-page-number 1)
     (cl-decf epresent-page-number))
   (epresent-current-page))
+
+(defun epresent-next-subheading ()
+  "Advance to next subheading, unhiding it if hidden."
+  (interactive)
+  (org-next-visible-heading 1)
+  (org-show-subtree))
+
+(defun epresent-previous-subheading ()
+  "Go back to previous subheading, possibly hiding the current one."
+  (interactive)
+  (when (> (org-current-level) 1)
+    (outline-hide-subtree))
+  (org-next-visible-heading -1) ; -1 means previous
+  (if (> (org-current-level) 1) ; show if we found a subheading
+      (org-show-subtree)))
 
 (defun epresent-clean-overlays (&optional start end)
   (interactive)
@@ -337,17 +353,19 @@ If nil then source blocks are initially hidden on slide change."
        (t (push (make-overlay (match-beginning 0) (match-end 0))
                 epresent-overlays)
           (overlay-put (car epresent-overlays) 'invisible 'epresent-hide))))
-    ;; page title faces
+    ;; page title faces and heading/subheading faces
     (goto-char (point-min))
     (while (re-search-forward "^\\(*+\\)\\([ \t]+\\)\\(.*\\)$" nil t)
+      ;; hide the first match, that is the stars
       (push (make-overlay (match-beginning 1) (or (match-end 2)
-                                                  (match-end 1)))
-            epresent-overlays)
+                                                 (match-end 1)))
+           epresent-overlays)
       (overlay-put (car epresent-overlays) 'invisible 'epresent-hide)
+      ;; apply faces to heading and subheading
       (push (make-overlay (match-beginning 3) (match-end 3)) epresent-overlays)
       (if (> (length (match-string 1)) 1)
           (overlay-put (car epresent-overlays) 'face 'epresent-subheading-face)
-        (overlay-put (car epresent-overlays) 'face 'epresent-heading-face)))
+	  (overlay-put (car epresent-overlays) 'face 'epresent-heading-face)))
     ;; fancy bullet points
     (org-superstar-mode)
     ;; hide todos
@@ -390,7 +408,8 @@ If nil then source blocks are initially hidden on slide change."
 (defun epresent-refresh ()
   (interactive)
   (epresent-clean-overlays (point-min) (point-max))
-  (epresent-fontify))
+  (epresent-fontify)
+  )
 
 (defun epresent-setup-src-edit ()
   (setq cursor-type 'box))
@@ -519,13 +538,15 @@ If nil then source blocks are initially hidden on slide change."
     (define-key map "x" 'org-babel-execute-src-block)
     (define-key map "r" 'epresent-refresh)
     (define-key map "g" 'epresent-refresh)
+    (define-key map "N" 'epresent-next-subheading)
+    (define-key map "P" 'epresent-previous-subheading)
+    (define-key map "i" 'epresent-show-file)
     ;; global controls
     (define-key map "q" 'epresent-quit)
     (define-key map "1" 'epresent-top)
     (define-key map "s" 'epresent-toggle-hide-src-blocks)
     (define-key map "S" 'epresent-toggle-hide-src-block)
     (define-key map "t" 'epresent-top)
-    (define-key map "i" 'epresent-show-file)
     map)
   "Local keymap for EPresent display mode.")
 
@@ -558,7 +579,8 @@ If nil then source blocks are initially hidden on slide change."
   (add-to-invisibility-spec '(epresent-hide))
   ;; remove flyspell overlays
   (flyspell-mode-off)
-  (epresent-fontify))
+  (epresent-fontify)
+  )
 
 (defvar epresent-edit-map (let ((map (copy-keymap org-mode-map)))
                             (define-key map [f5] 'epresent-refresh)
