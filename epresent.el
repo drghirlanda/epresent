@@ -510,14 +510,23 @@ If nil then source blocks are initially hidden on slide change."
       nil) ; do nothing if image-file is nil
   )
 
-(defun epresent-show-video (filename)
-  "Show a video in fullscreen mode."
-  (interactive "fVideo file: ")
-  (setq fullscreen-now (frame-parameter nil 'fullscreen))
-  (set-frame-parameter nil 'fullscreen 'maximized)
-  (shell-command (concat "mplayer -fs " filename))
-  (set-frame-parameter nil 'fullscreen 'fullscreen-now)
-  (delete-other-windows)) ; gets rid of *Shell Output* buffer
+(defun epresent-show-video (filename &optional volume)
+  "Show a video in fullscreen mode.
+
+FILENAME is the video filename.
+
+VOLUME is the volume. Use -200 to mute the video.
+
+This function uses mplayer."
+  (if (not volume)
+      (setq volume "")
+    (setq volume (concat " -af volume=" (number-to-string volume))))
+  (set-frame-parameter nil 'fullscreen 'nil)
+  (shell-command (concat "mplayer" volume " -fs " filename))
+  (sit-for 1) ;; avoids display problems
+  (set-frame-parameter nil 'fullscreen 'fullboth)
+  (delete-other-windows)
+  )
 
 (defvar epresent-mode-map
   (let ((map (make-keymap)))
