@@ -101,6 +101,17 @@
   :type 'boolean
   :group 'epresent)
 
+(defcustom epresent-slide-in-lines 10
+  "When slide in is used, how many lines from below the header
+are used for the slide-in animation."
+  :type 'number
+  :group 'epresent)
+
+(defcustom epresent-slide-in-duration 0.250
+  "When slide-in is used, duration of the effect, in seconds."
+  :type 'number
+  :group 'epresent)
+
 (defcustom epresent-text-scale 400
   "Height for the text size when presenting."
   :type 'number
@@ -237,20 +248,13 @@ If nil then source blocks are initially hidden on slide change."
 	  (org-entry-get nil "EPRESENT_SLIDE_IN" nil))
       (save-excursion
 	(goto-char (point-min))
-	;; (forward-line) ; skip header
-	;; (setq epresent-slide-in-overlay
-	;;       (make-overlay (point) (+ 1 (point))))
-	;; (overlay-put epresent-slide-in-overlay 'display "\n")
-	;; (sit-for 1)
-	;; (delete-overlay epresent-slide-in-overlay) 
-	;; (goto-char point-min)
 	(forward-line)
-	(newline 10)
-	(forward-line -10)
-	(dotimes (i 10)
+	(newline epresent-slide-in-lines)
+	(forward-line (- epresent-slide-in-lines))
+	(dotimes (i epresent-slide-in-lines)
 	  (progn
 	    (delete-char 1)
-	    (sit-for 0.05)))
+	    (sit-for (/ epresent-slide-in-duration epresent-slide-in-lines))))
 	(goto-char (point-min))
 	(not-modified)
 	)))
