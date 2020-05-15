@@ -96,6 +96,11 @@
 (defvar epresent-pretty-entities nil)
 (defvar epresent-page-number 0)
 
+(defcustom epresent-slide-in nil
+  "Apply slide-in effect when changing slides."
+  :type 'boolean
+  :group 'epresent)
+
 (defcustom epresent-text-scale 400
   "Height for the text size when presenting."
   :type 'number
@@ -220,9 +225,35 @@ If nil then source blocks are initially hidden on slide change."
 	  (org-set-visibility-according-to-property t) ;; folds children
           (let ((epresent-src-block-toggle-state
                  (if epresent-src-blocks-visible :show :hide)))
-            (epresent-toggle-hide-src-blocks))))
+            (epresent-toggle-hide-src-blocks)))
+	)
     ;; before first headline -- fold up subtrees as TOC
     (org-cycle '(4))))
+
+(defun epresent-slide-in-effect ()
+  "Apply slide-in effect."
+  (interactive)
+  (if (or epresent-slide-in
+	  (org-entry-get nil "EPRESENT_SLIDE_IN" nil))
+      (save-excursion
+	(goto-char (point-min))
+	;; (forward-line) ; skip header
+	;; (setq epresent-slide-in-overlay
+	;;       (make-overlay (point) (+ 1 (point))))
+	;; (overlay-put epresent-slide-in-overlay 'display "\n")
+	;; (sit-for 1)
+	;; (delete-overlay epresent-slide-in-overlay) 
+	;; (goto-char point-min)
+	(forward-line)
+	(newline 10)
+	(forward-line -10)
+	(dotimes (i 10)
+	  (progn
+	    (delete-char 1)
+	    (sit-for 0.05)))
+	(goto-char (point-min))
+	(not-modified)
+	)))
 
 (defun epresent-top ()
   "Present the first outline heading."
@@ -242,7 +273,8 @@ If nil then source blocks are initially hidden on slide change."
             (outline-next-heading)
           (org-get-next-sibling))
     (cl-incf epresent-page-number))
-  (epresent-current-page))
+  (epresent-current-page)
+  (epresent-slide-in-effect))
 
 (defun epresent-previous-page ()
   "Present the previous outline heading."
@@ -300,9 +332,10 @@ If nil then source blocks are initially hidden on slide change."
   (when (string= "EPresent" (frame-parameter nil 'title))
     (delete-frame (selected-frame)))
   (when epresent--org-file
-    (kill-buffer (get-file-buffer epresent--org-file))
-    (when (file-exists-p epresent--org-file)
-      (delete-file epresent--org-file)))
+   (kill-buffer (get-file-buffer epresent--org-file))
+      (when (file-exists-p epresent--org-file)
+        (delete-file epresent--org-file))
+    )
   (when epresent--org-buffer
     (set-buffer epresent--org-buffer))
   (org-mode)
