@@ -561,13 +561,12 @@ FILENAME is the video filename.
 
 If MUTE is non nil, the audio is muted.
 
-This function uses mplayer."
+This function uses vlc."
   (if mute
       (setq mute " --no-audio ")
     (setq mute ""))
   (set-frame-parameter nil 'fullscreen nil)
   (shell-command (concat "cvlc -f --no-osd" mute filename))
-  (sit-for 1) ;; avoids display problems
   (delete-other-windows)
   (set-frame-parameter nil 'fullscreen 'fullboth)
   )
