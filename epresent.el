@@ -122,6 +122,13 @@ are used for the slide-in animation."
   :type 'number
   :group 'epresent)
 
+(defcustom epresent-internal-border-width 75
+  "The internal border will be the number of pixels of margin
+between your text and the screen borders. Increase (decrease) to
+leave more (less). CURRENTLY NOT WORKING"
+  :type 'integer
+  :group 'epresent)
+
 (defcustom epresent-hide-todos t
   "Whether or not to hide TODOs during the presentation."
   :type 'boolean
@@ -175,7 +182,7 @@ If nil then source blocks are initially hidden on slide change."
                                         (vertical-scroll-bars . nil)
                                         (left-fringe . 0)
                                         (right-fringe . 0)
-                                        (internal-border-width . 20)
+                                        (internal-border-width . 75)
                                         (cursor-type . nil)
                                         ))))
   (raise-frame epresent--frame)
@@ -547,22 +554,22 @@ If nil then source blocks are initially hidden on slide change."
       nil) ; do nothing if image-file is nil
   )
 
-(defun epresent-show-video (filename &optional volume)
+(defun epresent-show-video (filename &optional mute)
   "Show a video in fullscreen mode.
 
 FILENAME is the video filename.
 
-VOLUME is the volume. Use -200 to mute the video.
+If MUTE is non nil, the audio is muted.
 
 This function uses mplayer."
-  (if (not volume)
-      (setq volume "")
-    (setq volume (concat " -af volume=" (number-to-string volume))))
-  (set-frame-parameter nil 'fullscreen 'nil)
-  (shell-command (concat "mplayer" volume " -fs " filename))
+  (if mute
+      (setq mute " --no-audio ")
+    (setq mute ""))
+  (set-frame-parameter nil 'fullscreen nil)
+  (shell-command (concat "cvlc -f --no-osd" mute filename))
   (sit-for 1) ;; avoids display problems
-  (set-frame-parameter nil 'fullscreen 'fullboth)
   (delete-other-windows)
+  (set-frame-parameter nil 'fullscreen 'fullboth)
   )
 
 (defvar epresent-mode-map
