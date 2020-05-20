@@ -252,10 +252,13 @@ If nil then source blocks are initially hidden on slide change."
   "Apply slide-in effect."
   (interactive)
   (if (or epresent-slide-in
-	  (org-entry-get nil "EPRESENT_SLIDE_IN" nil))
+	  (org-entry-get nil "EPRESENT_SLIDE_IN"))
       (save-excursion
 	(goto-char (point-min))
 	(forward-line)
+	;; if there is a drawer, skip it
+	(if (looking-at "[ \t]*:PROPERTIES:")
+	    (re-search-forward "^[ \t]*:END:[ \r\n]" nil t))
 	(newline epresent-slide-in-lines)
 	(forward-line (- epresent-slide-in-lines))
 	(dotimes (i epresent-slide-in-lines)
@@ -518,7 +521,7 @@ If nil then source blocks are initially hidden on slide change."
   (interactive "P")
   (epresent-toggle-hide-src-blocks t))
 
-(defun epresent-show-file (filename &optional size below)
+(defun epresent-show-file (&optional filename size below)
   "Show FILENAME file by splitting the buffer.
 
   If BELOW is nil (default), the new buffer is to the right of
@@ -535,8 +538,19 @@ If nil then source blocks are initially hidden on slide change."
   with that mode.)
 
   The file buffer is refreshed anytime it is displayed."
+  (interactive)
   (delete-other-windows)
-  ; negate size if not nil to conform to split-window-* conventions
+  ;; if any of the arguments is not set, look at properties:
+  (if (not filename)
+      (setq filename (org-entry-get nil "EPRESENT_SHOW_FILE")))
+  (when (not size)
+    (setq size (org-entry-get nil "EPRESENT_SHOW_SIZE"))
+    ;; convert to number, as properties are strings:
+    (if (stringp size)
+	(setq size (string-to-number size))))
+  (if (not below)
+      (setq below (org-entry-get nil "EPRESENT_SHOW_BELOW")))
+  ;; negate size if not nil to conform to split-window-* conventions
   (if size (setq size (- size))) 
   (if below
       (split-window-below size)
@@ -601,6 +615,7 @@ This function uses vlc."
     (define-key map "g" 'epresent-refresh)
     (define-key map "N" 'epresent-next-subheading)
     (define-key map "P" 'epresent-previous-subheading)
+    (define-key map "i" 'epresent-show-file)
     ;; global controls
     (define-key map "q" 'epresent-quit)
     (define-key map "1" 'epresent-top)
