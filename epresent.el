@@ -564,12 +564,12 @@ If nil then source blocks are initially hidden on slide change."
   (setq mode-line-format (epresent-get-mode-line))
   (revert-buffer t t t)
   ; set width of PDF and image files
-  ;; (if (string= "pdf" (file-name-extension filename))
-  ;;     (pdf-view-fit-width-to-window))
-  ;; (if (eq major-mode image-mode)
-  ;;     (if below
-  ;; 	  (image-transform-fit-to-height)
-  ;; 	(image-transform-fit-to-width)))
+  (if (string= "pdf" (file-name-extension filename))
+      (pdf-view-fit-width-to-window))
+  (if (eq major-mode image-mode)
+      (if below
+	  (image-transform-fit-to-height)
+	(image-transform-fit-to-width)))
   )
 
 (defun epresent-show-video (&optional filename mute)
