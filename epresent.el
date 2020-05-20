@@ -522,13 +522,17 @@ If nil then source blocks are initially hidden on slide change."
   (epresent-toggle-hide-src-blocks t))
 
 (defun epresent-show-file (&optional filename size below)
-  "Show FILENAME file by splitting the buffer.
+  "Show FILENAME file by splitting the buffer. If FILENAME is not
+  given, the value of the EPRESENT_SHOW_FILE property is used.
 
   If BELOW is nil (default), the new buffer is to the right of
-  the current buffer, otherwise it is below.
+  the current buffer, otherwise it is below. If not provided, the
+  EPRESENT_SHOW_BELOW property is looked up.
 
   SIZE is the size of the new buffer, in lines when it is below,
-  and in columns when it is to the right.
+  and in columns when it is to the right. If not provided, the
+  EPRESENT_SHOW_SIZE property is used. If nothing is found, SIZE
+  defaults to half the window.
 
   The file is fit to width or height if it is a PDF or image.
 
@@ -568,14 +572,22 @@ If nil then source blocks are initially hidden on slide change."
   ;; 	(image-transform-fit-to-width)))
   )
 
-(defun epresent-show-video (filename &optional mute)
+(defun epresent-show-video (&optional filename mute)
   "Show a video in fullscreen mode.
 
-FILENAME is the video filename.
+FILENAME is the video filename. If not provided, the value of the
+EPRESENT_VIDEO property is used.
 
-If MUTE is non nil, the audio is muted.
+If MUTE is non nil, the audio is muted. If not provided, the
+value of the EPRESENT_MUTE property is used.
 
 This function uses vlc."
+  (interactive)
+  ;; if no filename or mute, try to get them from properties:
+  (if (not filename)
+      (setq filename (org-entry-get nil "EPRESENT_VIDEO")))
+  (if (not mute)
+      (setq mute (org-entry-get nil "EPRESENT_MUTE")))
   (if mute
       (setq mute " --no-audio ")
     (setq mute ""))
