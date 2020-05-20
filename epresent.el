@@ -628,6 +628,7 @@ This function uses vlc."
     (define-key map "N" 'epresent-next-subheading)
     (define-key map "P" 'epresent-previous-subheading)
     (define-key map "i" 'epresent-show-file)
+    (define-key map "I" 'epresent-show-video)
     ;; global controls
     (define-key map "q" 'epresent-quit)
     (define-key map "1" 'epresent-top)
