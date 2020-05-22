@@ -672,12 +672,14 @@ This function uses vlc."
   (org-map-entries (lambda ()
 		     (when (org-entry-get nil "EPRESENT_HIDE") 
 		       (org-mark-subtree)
-		       (push (make-overlay (point) (mark)) epresent-overlays)
+		       ;; we make things insvisile only until mark-1
+		       ;; to leave a newline visible, as a separator
+		       ;; betwen this heading and the next
+		       (push (make-overlay (point) (- (mark) 1)) epresent-overlays)
 		       (overlay-put (car epresent-overlays)
 				    'invisible
 				    'epresent-hide)
-		       (deactivate-mark))))
-  )
+		       (deactivate-mark)))))
 
 (defvar epresent-edit-map (let ((map (copy-keymap org-mode-map)))
                             (define-key map [f5] 'epresent-refresh)
