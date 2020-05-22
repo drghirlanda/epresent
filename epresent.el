@@ -668,6 +668,15 @@ This function uses vlc."
   ;; remove flyspell overlays
   (flyspell-mode-off)
   (epresent-fontify)
+  ;; hide headings with EPRESENT_HIDE tag
+  (org-map-entries (lambda ()
+		     (when (org-entry-get nil "EPRESENT_HIDE") 
+		       (org-mark-subtree)
+		       (push (make-overlay (point) (mark)) epresent-overlays)
+		       (overlay-put (car epresent-overlays)
+				    'invisible
+				    'epresent-hide)
+		       (deactivate-mark))))
   )
 
 (defvar epresent-edit-map (let ((map (copy-keymap org-mode-map)))
