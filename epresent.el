@@ -670,7 +670,9 @@ This function uses vlc."
   (epresent-fontify)
   ;; hide headings with EPRESENT_HIDE tag
   (org-map-entries (lambda ()
-		     (when (org-entry-get nil "EPRESENT_HIDE") 
+		     (when (or
+			    (org-entry-get nil "EPRESENT_HIDE")
+			    (string= (org-entry-get nil "ITEM") "Speaker Notes"))
 		       (org-mark-subtree)
 		       ;; we make things insvisile only until mark-1
 		       ;; to leave a newline visible, as a separator
