@@ -592,10 +592,34 @@ This function uses vlc."
       (setq mute " --no-audio ")
     (setq mute ""))
   (set-frame-parameter nil 'fullscreen nil)
-  (shell-command (concat "cvlc -f --no-osd" mute filename))
+  (shell-command (concat "cvlc -f --no-osd " mute filename))
   (delete-other-windows)
   (set-frame-parameter nil 'fullscreen 'fullboth)
   )
+
+(defun epresent-estimate-time ()
+  "Estimates the time needed to read all speaker notes, assuming
+a reading speed of 125 words per minute. The estimated time and
+the number of words in speaker notes are displayed in the
+minibuffer."
+  (interactive)
+  (setq speaker-words 0)
+  (org-map-entries
+   (lambda ()
+     (setq this-headline (downcase (org-entry-get nil "ITEM")))
+     (when (string= this-headline "speaker notes")
+       (save-excursion
+	 (org-mark-subtree)
+	 (setq speaker-words
+	       (+ speaker-words (count-words (point) (mark))))
+	 (deactivate-mark)))))
+  (setq speaker-time (number-to-string (/ speaker-words 125)))
+  (message (concat
+	    "Estimated speaking time: "
+	    speaker-time
+	    " minutes ("
+	    (number-to-string speaker-words)
+	    " words)")))
 
 (defvar epresent-mode-map
   (let ((map (make-keymap)))
@@ -672,7 +696,7 @@ This function uses vlc."
   (org-map-entries (lambda ()
 		     (when (or
 			    (org-entry-get nil "EPRESENT_HIDE")
-			    (string= (org-entry-get nil "ITEM") "Speaker Notes"))
+			    (string= (downcase (org-entry-get nil "ITEM")) "speaker notes"))
 		       (org-mark-subtree)
 		       ;; we make things insvisile only until mark-1
 		       ;; to leave a newline visible, as a separator
