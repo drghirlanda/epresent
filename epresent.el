@@ -101,6 +101,11 @@
   :type 'boolean
   :group 'epresent)
 
+(defvar epresent-saved-mode-line-background nil)
+(defvar epresent-saved-mode-line-box nil)
+(defvar epresent-saved-mode-line-inactive-background nil)
+(defvar epresent-saved-mode-line-inactive-box nil)
+
 (defcustom epresent-mode-line-indicators t
   "If not nil, display a dot in the mode line if the current page
 has an EPRESENT_SHOW_FILE property, and display two dots if it
@@ -264,11 +269,15 @@ If nil then source blocks are initially hidden on slide change."
 	  (if (org-entry-get nil "EPRESENT_SHOW_VIDEO")
 	      (setq indicators (concat indicators ".. "))))
 	(setq mode-line-format (concat indicators (epresent-get-mode-line)))
-	;; make modeline plain
-	(if epresent-mode-line-plain
-	    (set-face-attribute 'mode-line nil :background "white" :box nil)
-	    (set-face-attribute 'mode-line-inactive nil :background "white" :box nil)
-	))
+	;; make modeline plain. save parameters that we change so that they can be restored later
+	(when epresent-mode-line-plain
+	      (setq epresent-saved-mode-line-background (face-attribute 'mode-line :background))
+	      (setq epresent-saved-mode-line-inactive-background (face-attribute 'mode-line-inactive :background))
+	      (setq epresent-saved-mode-line-box (face-attribute 'mode-line :box))
+	      (setq epresent-saved-mode-line-inactive-box (face-attribute 'mode-line-inactive :box))
+	      (set-face-attribute 'mode-line nil :background (frame-parameter nil 'background-color) :box nil)
+	      (set-face-attribute 'mode-line-inactive nil :background (frame-parameter nil 'background-color) :box nil))
+	)
     ;; before first headline -- fold up subtrees as TOC
     (progn
       (org-cycle '(4))
@@ -384,8 +393,15 @@ If nil then source blocks are initially hidden on slide change."
     (widen))
   (hack-local-variables)
   ;; delete all epresent overlays
-  (epresent-clean-overlays))
-
+  (epresent-clean-overlays)
+  ;; restore mode-line parameters if we changed them
+  (if epresent-mode-line-plain
+      (progn
+	(set-face-attribute 'mode-line nil :background epresent-saved-mode-line-background)
+	(set-face-attribute 'mode-line nil :box epresent-saved-mode-line-box)
+	(set-face-attribute 'mode-line-inactive nil :background epresent-saved-mode-line-inactive-background)
+	(set-face-attribute 'mode-line-inactive nil :box epresent-saved-mode-line-inactive-box))))
+  
 (defun epresent-increase-font ()
   "Increase the presentation font size."
   (interactive)
