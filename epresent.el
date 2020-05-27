@@ -96,6 +96,18 @@
 (defvar epresent-pretty-entities nil)
 (defvar epresent-page-number 0)
 
+(defcustom epresent-mode-line-plain t
+  "Make the modeline look the same as the frame background"
+  :type 'boolean
+  :group 'epresent)
+
+(defcustom epresent-mode-line-indicators t
+  "If not nil, display a dot in the mode line if the current page
+has an EPRESENT_SHOW_FILE property, and display two dots if it
+has an EPRESENT_SHOW_VIDEO property."
+  :type 'boolean
+  :group 'epresent)
+
 (defcustom epresent-slide-in nil
   "Apply slide-in effect when changing slides."
   :type 'boolean
@@ -244,9 +256,23 @@ If nil then source blocks are initially hidden on slide change."
           (let ((epresent-src-block-toggle-state
                  (if epresent-src-blocks-visible :show :hide)))
             (epresent-toggle-hide-src-blocks)))
-	)
+	;; add image/video indicators to modeline
+	(setq indicators "")
+	(when epresent-mode-line-indicators
+	  (if (org-entry-get nil "EPRESENT_SHOW_FILE")
+	      (setq indicators ". "))
+	  (if (org-entry-get nil "EPRESENT_SHOW_VIDEO")
+	      (setq indicators (concat indicators ".. "))))
+	(setq mode-line-format (concat indicators (epresent-get-mode-line)))
+	;; make modeline plain
+	(if epresent-mode-line-plain
+	    (set-face-attribute 'mode-line nil :background "white" :box nil)
+	    (set-face-attribute 'mode-line-inactive nil :background "white" :box nil)
+	))
     ;; before first headline -- fold up subtrees as TOC
-    (org-cycle '(4))))
+    (progn
+      (org-cycle '(4))
+      	  (setq mode-line-format (epresent-get-mode-line)))))
 
 (defun epresent-slide-in-effect ()
   "Apply slide-in effect."
@@ -563,7 +589,7 @@ If nil then source blocks are initially hidden on slide change."
   (find-file filename)
   (setq mode-line-format (epresent-get-mode-line))
   (revert-buffer t t t)
-  ; set width of PDF and image files
+  ;; set width of PDF and image files
   (if (string= "pdf" (file-name-extension filename))
       (pdf-view-fit-width-to-window))
   (if (eq major-mode image-mode)
