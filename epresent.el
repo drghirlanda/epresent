@@ -96,20 +96,10 @@
 (defvar epresent-pretty-entities nil)
 (defvar epresent-page-number 0)
 
-(defcustom epresent-mode-line-plain t
-  "Make the modeline look the same as the frame background"
-  :type 'boolean
-  :group 'epresent)
-
-(defvar epresent-saved-mode-line-background nil)
-(defvar epresent-saved-mode-line-box nil)
-(defvar epresent-saved-mode-line-inactive-background nil)
-(defvar epresent-saved-mode-line-inactive-box nil)
-
-(defcustom epresent-mode-line-indicators t
-  "If not nil, display a dot in the mode line if the current page
-has an EPRESENT_SHOW_FILE property, and display two dots if it
-has an EPRESENT_SHOW_VIDEO property."
+(defcustom epresent-indicators t
+  "If not nil, display a dot in the top right corner if the
+current page has an EPRESENT_SHOW_FILE property, and display two
+dots if it has an EPRESENT_SHOW_VIDEO property."
   :type 'boolean
   :group 'epresent)
 
@@ -142,7 +132,7 @@ are used for the slide-in animation."
 (defcustom epresent-internal-border-width 75
   "The internal border will be the number of pixels of margin
 between your text and the screen borders. Increase (decrease) to
-leave more (less). CURRENTLY NOT WORKING"
+leave more (less)."
   :type 'integer
   :group 'epresent)
 
@@ -262,27 +252,29 @@ If nil then source blocks are initially hidden on slide change."
                  (if epresent-src-blocks-visible :show :hide)))
             (epresent-toggle-hide-src-blocks)))
 	;; add image/video indicators to modeline
-	(setq indicators "")
-	(when epresent-mode-line-indicators
-	  (if (org-entry-get nil "EPRESENT_SHOW_FILE")
-	      (setq indicators ". "))
-	  (if (org-entry-get nil "EPRESENT_SHOW_VIDEO")
-	      (setq indicators (concat indicators ".. "))))
-	(setq mode-line-format (concat indicators (epresent-get-mode-line)))
-	;; make modeline plain. save parameters that we change so that they can be restored later
-	(when epresent-mode-line-plain
-	      (setq epresent-saved-mode-line-background (face-attribute 'mode-line :background))
-	      (setq epresent-saved-mode-line-inactive-background (face-attribute 'mode-line-inactive :background))
-	      (setq epresent-saved-mode-line-box (face-attribute 'mode-line :box))
-	      (setq epresent-saved-mode-line-inactive-box (face-attribute 'mode-line-inactive :box))
-	      (set-face-attribute 'mode-line nil :background (frame-parameter nil 'background-color) :box nil)
-	      (set-face-attribute 'mode-line-inactive nil :background (frame-parameter nil 'background-color) :box nil))
-	)
+	(when epresent-indicators
+	  (epresent-show-indicators)))
     ;; before first headline -- fold up subtrees as TOC
     (progn
-      (org-cycle '(4))
-      	  (setq mode-line-format (epresent-get-mode-line)))))
+      (org-cycle '(4)))))
 
+
+(defun epresent-show-indicators ()
+  ""
+  (setq indicators "")
+  (if (org-entry-get nil "EPRESENT_SHOW_FILE")
+	      (setq indicators "."))
+  (if (org-entry-get nil "EPRESENT_SHOW_VIDEO")
+      (setq indicators (concat " .." indicators)))
+  (if (not (string-empty-p indicators))
+      (save-excursion
+	(point-min)
+	(setq padding (- (frame-width) (length (org-entry-get nil "ITEM"))))
+	(setq padding (- padding (length indicators)))
+	(setq padding (- padding 1))
+	(setq indicators (concat (make-string padding 32) indicators))
+	(momentary-string-display indicators (line-end-position)))))
+  
 (defun epresent-slide-in-effect ()
   "Apply slide-in effect."
   (interactive)
@@ -393,14 +385,7 @@ If nil then source blocks are initially hidden on slide change."
     (widen))
   (hack-local-variables)
   ;; delete all epresent overlays
-  (epresent-clean-overlays)
-  ;; restore mode-line parameters if we changed them
-  (if epresent-mode-line-plain
-      (progn
-	(set-face-attribute 'mode-line nil :background epresent-saved-mode-line-background)
-	(set-face-attribute 'mode-line nil :box epresent-saved-mode-line-box)
-	(set-face-attribute 'mode-line-inactive nil :background epresent-saved-mode-line-inactive-background)
-	(set-face-attribute 'mode-line-inactive nil :box epresent-saved-mode-line-inactive-box))))
+  (epresent-clean-overlays))
   
 (defun epresent-increase-font ()
   "Increase the presentation font size."
@@ -618,7 +603,7 @@ If nil then source blocks are initially hidden on slide change."
   "Show a video in fullscreen mode.
 
 FILENAME is the video filename. If not provided, the value of the
-EPRESENT_VIDEO property is used.
+EPRESENT_SHOW_VIDEO property is used.
 
 If MUTE is non nil, the audio is muted. If not provided, the
 value of the EPRESENT_MUTE property is used.
@@ -627,7 +612,7 @@ This function uses vlc."
   (interactive)
   ;; if no filename or mute, try to get them from properties:
   (if (not filename)
-      (setq filename (org-entry-get nil "EPRESENT_VIDEO")))
+      (setq filename (org-entry-get nil "EPRESENT_SHOW_VIDEO")))
   (if (not mute)
       (setq mute (org-entry-get nil "EPRESENT_MUTE")))
   (if mute
@@ -690,6 +675,7 @@ minibuffer."
     (define-key map [f5] 'epresent-edit-text) ; Another [f5] exits edit mode.
     (define-key map "x" 'org-babel-execute-src-block)
     (define-key map "r" 'epresent-refresh)
+    (define-key map "R" 'redraw-display)
     (define-key map "g" 'epresent-refresh)
     (define-key map "N" 'epresent-next-subheading)
     (define-key map "P" 'epresent-previous-subheading)
