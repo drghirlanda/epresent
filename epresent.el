@@ -269,30 +269,30 @@ If nil then source blocks are initially hidden on slide change."
 	(point-min)
 	(setq padding (- (frame-width) (length (org-entry-get nil "ITEM"))))
 	(setq padding (- padding (length indicators)))
-	(setq padding (- padding 1))
+	(setq padding (- padding 2))
 	(setq indicators (concat (make-string padding 32) indicators))
 	(momentary-string-display indicators (line-end-position)))))
   
 (defun epresent-slide-in-effect ()
   "Apply slide-in effect."
   (interactive)
-  (if (or epresent-slide-in
-	  (org-entry-get nil "EPRESENT_SLIDE_IN"))
+  (setq slide-local (org-entry-get nil "EPRESENT_SLIDE_IN"))
+  (setq slide-global epresent-slide-in)
+  (if (or (and slide-global (not slide-local))
+	  slide-local)
       (save-excursion
 	(goto-char (point-min))
 	(forward-line)
 	;; if there is a drawer, skip it
 	(if (looking-at "[ \t]*:PROPERTIES:")
 	    (re-search-forward "^[ \t]*:END:[ \r\n]" nil t))
-	(newline epresent-slide-in-lines)
-	(forward-line (- epresent-slide-in-lines))
+	(setq ov (make-overlay (point) (point)))
 	(dotimes (i epresent-slide-in-lines)
 	  (progn
-	    (delete-char 1)
+	    (setq str (make-string (- epresent-slide-in-lines i) 10))
+	    (overlay-put ov 'after-string str)
 	    (sit-for (/ epresent-slide-in-duration epresent-slide-in-lines))))
-	(goto-char (point-min))
-	(not-modified)
-	)))
+	(delete-overlay ov))))
 
 (defun epresent-top ()
   "Present the first outline heading."
@@ -313,7 +313,8 @@ If nil then source blocks are initially hidden on slide change."
           (org-get-next-sibling))
     (cl-incf epresent-page-number))
   (epresent-current-page)
-  (epresent-slide-in-effect))
+  (epresent-slide-in-effect)
+  (epresent-show-file-auto))
 
 (defun epresent-previous-page ()
   "Present the previous outline heading."
@@ -596,6 +597,13 @@ If nil then source blocks are initially hidden on slide change."
 	  (image-transform-fit-to-height)
 	(image-transform-fit-to-width)))
   )
+
+(defun epresent-show-file-auto ()
+  "Helper function to show an image automatically upon page
+display."
+  (if (org-entry-get nil "EPRESENT_SHOW_AUTO")
+      (epresent-show-file)))
+  
 
 (defun epresent-show-video (&optional filename mute)
   "Show a video in fullscreen mode.
