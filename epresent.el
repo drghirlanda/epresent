@@ -255,18 +255,16 @@ If nil then source blocks are initially hidden on slide change."
 	(when epresent-indicators
 	  (epresent-show-indicators)))
     ;; before first headline -- fold up subtrees as TOC
-    (progn
-      (org-cycle '(4)))))
-
+    (org-cycle '(4))))
 
 (defun epresent-show-indicators ()
   ""
   (setq indicators "")
   (if (org-entry-get nil "EPRESENT_SHOW_FILE")
-	      (setq indicators "."))
+    (setq indicators "."))
   (if (org-entry-get nil "EPRESENT_SHOW_VIDEO")
-      (setq indicators (concat " .." indicators)))
-  (if (not (string-empty-p indicators))
+    (setq indicators (concat " .." indicators)))
+  (if (not (string= "" indicators))
       (save-excursion
 	(point-min)
 	(setq padding (- (frame-width) (length (org-entry-get nil "ITEM"))))
