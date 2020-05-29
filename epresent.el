@@ -104,7 +104,9 @@ dots if it has an EPRESENT_SHOW_VIDEO property."
   :group 'epresent)
 
 (defcustom epresent-slide-in nil
-  "Apply slide-in effect when changing slides."
+  "Apply slide-in effect when changing slides. If set globally,
+slide-in can be inhibited for a specific heading by setting the
+EPRESENT_SLIDE_IN property to 'no'."
   :type 'boolean
   :group 'epresent)
 
@@ -277,9 +279,11 @@ If nil then source blocks are initially hidden on slide change."
   "Apply slide-in effect."
   (interactive)
   (setq slide-local (org-entry-get nil "EPRESENT_SLIDE_IN"))
+  (if (string= slide-local "no")
+      (setq slide-local nil)
+    (setq slide-local t))
   (setq slide-global epresent-slide-in)
-  (if (or (and slide-global (not slide-local))
-	  slide-local)
+  (if (or slide-local (and (not slide-global) slide-local))
       (save-excursion
 	(goto-char (point-min))
 	(forward-line)
