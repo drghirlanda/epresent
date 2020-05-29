@@ -650,11 +650,11 @@ minibuffer."
 	 (setq speaker-words
 	       (+ speaker-words (count-words (point) (mark))))
 	 (deactivate-mark)))))
-  (setq speaker-time (number-to-string (/ speaker-words 125)))
+  (setq speaker-time (ceiling (/ (float speaker-words) 125)))
   (message (concat
-	    "Estimated speaking time: "
-	    speaker-time
-	    " minutes ("
+	    "Estimated speaking time in minutes: "
+	    (number-to-string speaker-time)
+	    " ("
 	    (number-to-string speaker-words)
 	    " words)")))
 
@@ -730,7 +730,7 @@ minibuffer."
   ;; remove flyspell overlays
   (flyspell-mode-off)
   (epresent-fontify)
-  ;; hide headings with EPRESENT_HIDE tag
+  ;; hide headings with EPRESENT_HIDE tag or marked as "speaker notes"
   (org-map-entries (lambda ()
 		     (when (or
 			    (org-entry-get nil "EPRESENT_HIDE")
