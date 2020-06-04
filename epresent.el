@@ -190,12 +190,14 @@ If nil then source blocks are initially hidden on slide change."
                                         (tool-bar-lines . 0)
                                         (vertical-scroll-bars . nil)
                                         (left-fringe . 0)
-                                        (right-fringe . 0)
-                                        (internal-border-width . 75)
+                                        (right-fringe . 10)
+                                        (internal-border-width . 50)
+					(right-divider-width . 0)
                                         (cursor-type . nil)
                                         ))))
   (raise-frame epresent--frame)
   (select-frame-set-input-focus epresent--frame)
+  (set-face-background 'fringe "white")
   epresent--frame)
 
 ;; functions
@@ -253,27 +255,27 @@ If nil then source blocks are initially hidden on slide change."
           (let ((epresent-src-block-toggle-state
                  (if epresent-src-blocks-visible :show :hide)))
             (epresent-toggle-hide-src-blocks)))
-	;; add image/video indicators to modeline
-	(when epresent-indicators
-	  (epresent-show-indicators)))
     ;; before first headline -- fold up subtrees as TOC
     (org-cycle '(4))))
 
 (defun epresent-show-indicators ()
   ""
-  (setq indicators "")
-  (if (org-entry-get nil "EPRESENT_SHOW_FILE")
-    (setq indicators "."))
-  (if (org-entry-get nil "EPRESENT_SHOW_VIDEO")
-    (setq indicators (concat " .." indicators)))
-  (if (not (string= "" indicators))
-      (save-excursion
-	(point-min)
-	(setq padding (- (frame-width) (length (org-entry-get nil "ITEM"))))
-	(setq padding (- padding (length indicators)))
-	(setq padding (- padding 2))
-	(setq indicators (concat (make-string padding 32) indicators))
-	(momentary-string-display indicators (line-end-position)))))
+  (interactive)
+  (save-excursion
+    (goto-char (point-min))
+    (end-of-line)
+    (when (org-entry-get nil "EPRESENT_SHOW_FILE")
+      (add-to-list 'epresent-overlays (make-overlay (point) (point)))
+      (overlay-put (car epresent-overlays)
+		   'before-string
+		   (propertize "A" 'display '(right-fringe filled-square))))
+    (when (org-entry-get nil "EPRESENT_SHOW_VIDEO")
+      (add-to-list 'epresent-overlays (make-overlay (point) (point)))
+      (overlay-put (car epresent-overlays)
+		   'before-string
+		   (propertize "A" 'display '(right-fringe hollow-square))))
+    ))
+
   
 (defun epresent-slide-in-effect ()
   "Apply slide-in effect."
@@ -318,6 +320,7 @@ If nil then source blocks are initially hidden on slide change."
     (cl-incf epresent-page-number))
   (epresent-current-page)
   (epresent-slide-in-effect)
+  (if epresent-indicators (epresent-show-indicators))
   (epresent-show-file-auto))
 
 (defun epresent-previous-page ()
