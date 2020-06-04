@@ -262,16 +262,21 @@ If nil then source blocks are initially hidden on slide change."
 (defun epresent-show-indicators ()
   ""
   (interactive)
+  (setq show-file nil)
   (save-excursion
     (goto-char (point-min))
     (end-of-line)
     (when (org-entry-get nil "EPRESENT_SHOW_FILE")
+      (setq show-file t)
       (add-to-list 'epresent-fringe-overlays (make-overlay (point) (point)))
       (overlay-put (car epresent-fringe-overlays)
 		   'before-string
 		   (propertize " " 'display '(right-fringe filled-square))))
     (when (org-entry-get nil "EPRESENT_SHOW_VIDEO")
-      (forward-line)
+      ;; advance to after properties if a file indicator is already here
+      (when show-file
+	(re-search-forward "[ \t]*:END:")
+	(forward-line))
       (add-to-list 'epresent-fringe-overlays (make-overlay (point) (point)))
       (overlay-put (car epresent-fringe-overlays)
 		   'before-string
@@ -365,6 +370,7 @@ If nil then source blocks are initially hidden on slide change."
     (setq epresent-overlays kept)))
 
 (defun epresent-clean-fringe-overlays ()
+  "Remove file and video indicators from fringe."
   (interactive)
   (dolist (ov epresent-fringe-overlays)
     (delete-overlay ov)))
