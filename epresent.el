@@ -89,6 +89,7 @@
   "Temporary Org-mode file used when a narrowed region.")
 
 (defvar epresent-overlays nil)
+(defvar epresent-fringe-overlays nil)
 (defvar epresent-inline-image-overlays nil)
 (defvar epresent-src-fontify-natively nil)
 (defvar epresent-hide-emphasis-markers nil)
@@ -254,7 +255,7 @@ If nil then source blocks are initially hidden on slide change."
 	  (org-set-visibility-according-to-property t) ;; folds children
           (let ((epresent-src-block-toggle-state
                  (if epresent-src-blocks-visible :show :hide)))
-            (epresent-toggle-hide-src-blocks)))
+            (epresent-toggle-hide-src-blocks))))
     ;; before first headline -- fold up subtrees as TOC
     (org-cycle '(4))))
 
@@ -265,15 +266,16 @@ If nil then source blocks are initially hidden on slide change."
     (goto-char (point-min))
     (end-of-line)
     (when (org-entry-get nil "EPRESENT_SHOW_FILE")
-      (add-to-list 'epresent-overlays (make-overlay (point) (point)))
-      (overlay-put (car epresent-overlays)
+      (add-to-list 'epresent-fringe-overlays (make-overlay (point) (point)))
+      (overlay-put (car epresent-fringe-overlays)
 		   'before-string
-		   (propertize "A" 'display '(right-fringe filled-square))))
+		   (propertize " " 'display '(right-fringe filled-square))))
     (when (org-entry-get nil "EPRESENT_SHOW_VIDEO")
-      (add-to-list 'epresent-overlays (make-overlay (point) (point)))
-      (overlay-put (car epresent-overlays)
+      (forward-line)
+      (add-to-list 'epresent-fringe-overlays (make-overlay (point) (point)))
+      (overlay-put (car epresent-fringe-overlays)
 		   'before-string
-		   (propertize "A" 'display '(right-fringe hollow-square))))
+		   (propertize " " 'display '(right-fringe hollow-square))))
     ))
 
   
@@ -362,6 +364,11 @@ If nil then source blocks are initially hidden on slide change."
         (delete-overlay ov)))
     (setq epresent-overlays kept)))
 
+(defun epresent-clean-fringe-overlays ()
+  (interactive)
+  (dolist (ov epresent-fringe-overlays)
+    (delete-overlay ov)))
+
 (defun epresent-quit ()
   "Quit the current presentation."
   (interactive)
@@ -391,7 +398,8 @@ If nil then source blocks are initially hidden on slide change."
     (widen))
   (hack-local-variables)
   ;; delete all epresent overlays
-  (epresent-clean-overlays))
+  (epresent-clean-overlays)
+  (epresent-clean-fringe-overlays))
   
 (defun epresent-increase-font ()
   "Increase the presentation font size."
@@ -589,6 +597,7 @@ If nil then source blocks are initially hidden on slide change."
       (setq below (org-entry-get nil "EPRESENT_SHOW_BELOW")))
   ;; negate size if not nil to conform to split-window-* conventions
   (if size (setq size (- size))) 
+  (epresent-clean-fringe-overlays)
   (if below
       (split-window-below size)
     (split-window-right size))
@@ -602,8 +611,7 @@ If nil then source blocks are initially hidden on slide change."
   (if (eq major-mode image-mode)
       (if below
 	  (image-transform-fit-to-height)
-	(image-transform-fit-to-width)))
-  )
+	(image-transform-fit-to-width))))
 
 (defun epresent-show-file-auto ()
   "Helper function to show an image automatically upon page
