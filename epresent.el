@@ -252,7 +252,7 @@ If nil then source blocks are initially hidden on slide change."
         (when (>= (org-reduced-level (org-current-level))
                   epresent-frame-level)
 	  (org-show-subtree)
-	  (org-set-visibility-according-to-property t) ;; folds children
+	  (org-set-visibility-according-to-property) ;; folds children
           (let ((epresent-src-block-toggle-state
                  (if epresent-src-blocks-visible :show :hide)))
             (epresent-toggle-hide-src-blocks))))
