@@ -430,13 +430,17 @@ If nil then source blocks are initially hidden on slide change."
             "^[ \t]*#\\(\\+\\(author\\|title\\|date\\):\\)?.*\n"
             nil t)
       (cond
+       ;; this avoids hiding title, author, or date
        ((and (match-string 2)
              (save-match-data
                (string-match (regexp-opt '("title" "author" "date"))
                              (match-string 2)))))
+       ;; special handling of #+results and #+attr_org (see comment)
        ((and (match-string 2)
              (save-match-data
-               (string-match org-babel-results-keyword (match-string 2))))
+	       (or
+		(string-match org-babel-results-keyword (match-string 2))
+		(string-match "#+attr_org:" (match-string 2)))))
         ;; This pulls back the end of the hidden overlay by one to
         ;; avoid hiding image results of code blocks.  I'm not sure
         ;; why this is required, or why images start on the preceding
@@ -444,6 +448,7 @@ If nil then source blocks are initially hidden on slide change."
         (push (make-overlay (match-beginning 0) (1- (match-end 0)))
               epresent-overlays)
         (overlay-put (car epresent-overlays) 'invisible 'epresent-hide))
+       ;; this hides all other comments
        (t (push (make-overlay (match-beginning 0) (match-end 0))
                 epresent-overlays)
           (overlay-put (car epresent-overlays) 'invisible 'epresent-hide))))
