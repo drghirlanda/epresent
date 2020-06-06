@@ -180,6 +180,8 @@ If nil then source blocks are initially hidden on slide change."
 
 (defvar epresent-show-filename nil)
 
+(defvar epresent-auxiliary-window nil)
+
 (defvar epresent-show-buffer nil)
 
 (defun epresent--get-frame ()
@@ -243,6 +245,10 @@ If nil then source blocks are initially hidden on slide change."
 (defun epresent-current-page ()
   "Present the current outline heading."
   (interactive)
+  (when epresent-auxiliary-window
+    (message "deleting aux window")
+    (delete-window epresent-auxiliary-window)
+    (setq epresent-auxiliary-window nil))
   (if (org-current-level)
       (progn
         (epresent-goto-top-level)
@@ -435,17 +441,20 @@ If nil then source blocks are initially hidden on slide change."
              (save-match-data
                (string-match (regexp-opt '("title" "author" "date"))
                              (match-string 2)))))
-       ;; special handling of #+results and #+attr_org (see comment)
+       ;; special handling of #+results
        ((and (match-string 2)
-             (save-match-data
-	       (or
-		(string-match org-babel-results-keyword (match-string 2))
-		(string-match "#+attr_org:" (match-string 2)))))
+	     (save-match-data
+	       (string-match org-babel-results-keyword (match-string 2))))
         ;; This pulls back the end of the hidden overlay by one to
         ;; avoid hiding image results of code blocks.  I'm not sure
         ;; why this is required, or why images start on the preceding
         ;; newline, but not knowing why doesn't make it less true.
-        (push (make-overlay (match-beginning 0) (1- (match-end 0)))
+        (push (make-overlay (match-beginning 0) (- (match-end 0) 1))
+              epresent-overlays)
+        (overlay-put (car epresent-overlays) 'invisible 'epresent-hide))
+       ((save-match-data
+	  (string-match "^[ \t]*#\\+attr_org:" (match-string 0)))
+        (push (make-overlay (match-beginning 0) (- (match-end 0) 1))
               epresent-overlays)
         (overlay-put (car epresent-overlays) 'invisible 'epresent-hide))
        ;; this hides all other comments
@@ -588,10 +597,9 @@ If nil then source blocks are initially hidden on slide change."
 
   The file is fit to width or height if it is a PDF or image.
 
-  To hide the file, delete its window normally with C-x 0. (There
-  is no keybinding special for this because the new image buffer
-  is not in epresent-mode and a global keybinding might interfere
-  with that mode.)
+  After the file is displayed and fit, focus is returned to the
+  EPresent window, and changing the frame will delete the
+  auxiliary window showing the file.)
 
   The file buffer is refreshed anytime it is displayed."
   (interactive)
@@ -609,20 +617,22 @@ If nil then source blocks are initially hidden on slide change."
   ;; negate size if not nil to conform to split-window-* conventions
   (if size (setq size (- size))) 
   (epresent-clean-fringe-overlays)
+  (setq epresent-presentation-window (selected-window))
   (if below
-      (split-window-below size)
-    (split-window-right size))
-  (other-window 1)
+      (setq epresent-auxiliary-window (split-window-below size))
+    (setq epresent-auxiliary-window (split-window-right size)))
+  (select-window epresent-auxiliary-window)
   (find-file filename)
   (setq mode-line-format (epresent-get-mode-line))
   (revert-buffer t t t)
   ;; set width of PDF and image files
   (if (string= "pdf" (file-name-extension filename))
       (pdf-view-fit-width-to-window))
-  (if (eq major-mode image-mode)
+  (if (and (boundp 'image-mode) (eq major-mode image-mode))
       (if below
 	  (image-transform-fit-to-height)
-	(image-transform-fit-to-width))))
+	(image-transform-fit-to-width)))
+  (select-window epresent-presentation-window))
 
 (defun epresent-show-file-auto ()
   "Helper function to show an image automatically upon page
@@ -713,6 +723,7 @@ minibuffer."
     (define-key map "P" 'epresent-previous-subheading)
     (define-key map "i" 'epresent-show-file)
     (define-key map "I" 'epresent-show-video)
+    (define-key map "K" 'delete-other-windows)
     ;; global controls
     (define-key map "q" 'epresent-quit)
     (define-key map "1" 'epresent-top)
