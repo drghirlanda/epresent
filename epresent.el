@@ -776,7 +776,9 @@ minibuffer."
 		       (overlay-put (car epresent-overlays)
 				    'invisible
 				    'epresent-hide)
-		       (deactivate-mark)))))
+		       (deactivate-mark))))
+  ;; reset the auxiliary window object
+  (setq epresent-auxiliary-window nil))
 
 (defvar epresent-edit-map (let ((map (copy-keymap org-mode-map)))
                             (define-key map [f5] 'epresent-refresh)
