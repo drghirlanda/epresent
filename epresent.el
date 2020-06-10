@@ -122,6 +122,11 @@ are used for the slide-in animation."
   :type 'number
   :group 'epresent)
 
+(defcustom epresent-slide-in-pause 1
+  "Pause after changing slide, before the slide-in kicks in."
+  :type 'number
+  :group 'epresent)
+
 (defcustom epresent-text-scale 400
   "Height for the text size when presenting."
   :type 'number
@@ -308,6 +313,7 @@ If nil then source blocks are initially hidden on slide change."
 	(setq ov (make-overlay (point) (point)))
 	(dotimes (i epresent-slide-in-lines)
 	  (progn
+	    (if (eq i 1) (sit-for epresent-slide-in-pause))
 	    (setq str (make-string (- epresent-slide-in-lines i) 10))
 	    (overlay-put ov 'after-string str)
 	    (sit-for (/ epresent-slide-in-duration epresent-slide-in-lines))))
@@ -453,7 +459,7 @@ If nil then source blocks are initially hidden on slide change."
               epresent-overlays)
         (overlay-put (car epresent-overlays) 'invisible 'epresent-hide))
        ((save-match-data
-	  (string-match "^[ \t]*#\\+attr_org:" (match-string 0)))
+	  (string-match "^[ \t]*#\\+attr_org:.*?\n" (match-string 0)))
         (push (make-overlay (match-beginning 0) (- (match-end 0) 1))
               epresent-overlays)
         (overlay-put (car epresent-overlays) 'invisible 'epresent-hide))
