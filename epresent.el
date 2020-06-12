@@ -90,6 +90,7 @@
 
 (defvar epresent-overlays nil)
 (defvar epresent-fringe-overlays nil)
+(defvar epresent-aux-fringe-overlay nil)
 (defvar epresent-inline-image-overlays nil)
 (defvar epresent-src-fontify-natively nil)
 (defvar epresent-hide-emphasis-markers nil)
@@ -185,7 +186,9 @@ If nil then source blocks are initially hidden on slide change."
 
 (defvar epresent-show-filename nil)
 
-(defvar epresent-auxiliary-window nil)
+(defvar epresent-aux-window nil)
+
+(defvar epresent-presentation-window nil)
 
 (defvar epresent-show-buffer nil)
 
@@ -250,10 +253,10 @@ If nil then source blocks are initially hidden on slide change."
 (defun epresent-current-page ()
   "Present the current outline heading."
   (interactive)
-  (when epresent-auxiliary-window
+  (when epresent-aux-window
     (message "deleting aux window")
-    (delete-window epresent-auxiliary-window)
-    (setq epresent-auxiliary-window nil))
+    (delete-window epresent-aux-window)
+    (setq epresent-aux-window nil))
   (if (org-current-level)
       (progn
         (epresent-goto-top-level)
@@ -622,30 +625,64 @@ If nil then source blocks are initially hidden on slide change."
       (setq below (org-entry-get nil "EPRESENT_SHOW_BELOW")))
   ;; negate size if not nil to conform to split-window-* conventions
   (if size (setq size (- size))) 
+  ;; clean fringe, otherwise indicators show up mid-screen
   (epresent-clean-fringe-overlays)
-  (setq epresent-presentation-window (selected-window))
   (if below
-      (setq epresent-auxiliary-window (split-window-below size))
-    (setq epresent-auxiliary-window (split-window-right size)))
-  (select-window epresent-auxiliary-window)
+      (setq epresent-aux-window (split-window-below size))
+    (setq epresent-aux-window (split-window-right size)))
+  (select-window epresent-aux-window)
   (find-file filename)
   (setq mode-line-format (epresent-get-mode-line))
   (revert-buffer t t t)
-  ;; set width of PDF and image files
-  (if (string= "pdf" (file-name-extension filename))
-      (pdf-view-fit-width-to-window))
-  (if (and (boundp 'image-mode) (eq major-mode image-mode))
-      (if below
-	  (image-transform-fit-to-height)
-	(image-transform-fit-to-width)))
+  ;; PDFs
+  (when (eq major-mode 'pdf-view-mode)
+    (pdf-view-fit-width-to-window)
+    (pdf-view-goto-page 1)
+    (epresent-update-aux-fringe-overlay))
+  ;; images
+  (when (eq major-mode 'image-mode)
+    (if below
+	(image-transform-fit-to-height)
+      (image-transform-fit-to-width)))
+  ;; go back to presentation window:
   (select-window epresent-presentation-window))
 
+(defun epresent-advance-file ()
+  "Advance the file showed by epresent-show-file to the next page."
+  (interactive)
+  (when (windowp epresent-aux-window)
+    (select-window epresent-aux-window)
+    (when (eq major-mode 'pdf-view-mode)
+      (pdf-view-next-page)
+      (epresent-update-aux-fringe-overlay))
+    (select-window epresent-presentation-window)))
+
+(defun epresent-show-file-or-advance ()
+  "Show a file using epresent-show-file. If the file is already
+shown, advance within the file using epresent-advance-file."
+  (interactive)
+  (if (windowp epresent-aux-window)
+      (epresent-advance-file)
+    (epresent-show-file)))
+
+(defun epresent-update-aux-fringe-overlay ()
+  ""
+  (interactive)
+  (if epresent-aux-fringe-overlay
+      (delete-overlay epresent-aux-fringe-overlay))
+  (when (eq major-mode 'pdf-view-mode)
+    (when (< (pdf-view-current-page) (pdf-cache-number-of-pages))
+      (setq epresent-aux-fringe-overlay (make-overlay (point) (point)))
+      (overlay-put
+       epresent-aux-fringe-overlay
+       'before-string
+       (propertize " " 'display '(right-fringe right-arrow))))))
+  
 (defun epresent-show-file-auto ()
   "Helper function to show an image automatically upon page
 display."
   (if (org-entry-get nil "EPRESENT_SHOW_AUTO")
       (epresent-show-file)))
-  
 
 (defun epresent-show-video (&optional filename mute)
   "Show a video in fullscreen mode.
@@ -727,7 +764,7 @@ minibuffer."
     (define-key map "g" 'epresent-refresh)
     (define-key map "N" 'epresent-next-subheading)
     (define-key map "P" 'epresent-previous-subheading)
-    (define-key map "i" 'epresent-show-file)
+    (define-key map "i" 'epresent-show-file-or-advance)
     (define-key map "I" 'epresent-show-video)
     (define-key map "K" 'delete-other-windows)
     ;; global controls
@@ -784,7 +821,7 @@ minibuffer."
 				    'epresent-hide)
 		       (deactivate-mark))))
   ;; reset the auxiliary window object
-  (setq epresent-auxiliary-window nil))
+  (setq epresent-aux-window nil))
 
 (defvar epresent-edit-map (let ((map (copy-keymap org-mode-map)))
                             (define-key map [f5] 'epresent-refresh)
@@ -827,6 +864,7 @@ minibuffer."
     (epresent--get-frame)
     (epresent-mode)
     (set-buffer-modified-p nil)
+    (setq epresent-presentation-window (selected-window))
     (run-hooks 'epresent-start-presentation-hook)))
 
 (define-key org-mode-map [f5]  'epresent-run)
