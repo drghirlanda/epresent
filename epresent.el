@@ -341,9 +341,9 @@ If nil then source blocks are initially hidden on slide change."
           (org-get-next-sibling))
     (cl-incf epresent-page-number))
   (epresent-current-page)
+  (epresent-show-file-auto)
   (epresent-slide-in-effect)
-  (if epresent-indicators (epresent-show-indicators))
-  (epresent-show-file-auto))
+  (if epresent-indicators (epresent-show-indicators)))
 
 (defun epresent-previous-page ()
   "Present the previous outline heading."
