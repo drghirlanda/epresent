@@ -351,7 +351,10 @@ EPRESENT_SHOW_AUTO is not t"
     (cl-incf epresent-page-number))
   (epresent-current-page)
   (epresent-slide-in-effect)
+<<<<<<< HEAD
   (epresent-show-file-auto)
+=======
+>>>>>>> f6272bc60094e8c295a2445e92794c8bd798cb4f
   (epresent-show-indicators-maybe))
 
 (defun epresent-previous-page ()
