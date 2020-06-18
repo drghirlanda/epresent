@@ -273,6 +273,15 @@ If nil then source blocks are initially hidden on slide change."
     ;; before first headline -- fold up subtrees as TOC
     (org-cycle '(4))))
 
+(defun epresent-show-indicators-maybe ()
+  "Show indicators if epresent-indicators is true and
+EPRESENT_SHOW_AUTO is not t"
+  (setq show-auto (org-entry-get nil "EPRESENT_SHOW_AUTO"))
+  (if (and
+       epresent-indicators
+       (not show-auto))
+      (epresent-show-indicators)))
+
 (defun epresent-show-indicators ()
   ""
   (interactive)
@@ -341,9 +350,9 @@ If nil then source blocks are initially hidden on slide change."
           (org-get-next-sibling))
     (cl-incf epresent-page-number))
   (epresent-current-page)
-  (epresent-show-file-auto)
   (epresent-slide-in-effect)
-  (if epresent-indicators (epresent-show-indicators)))
+  (epresent-show-file-auto)
+  (epresent-show-indicators-maybe))
 
 (defun epresent-previous-page ()
   "Present the previous outline heading."
