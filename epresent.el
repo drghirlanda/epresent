@@ -718,6 +718,7 @@ This function uses vlc."
   (shell-command (concat "cvlc -f --no-osd " mute filename))
   (delete-other-windows)
   (set-frame-parameter nil 'fullscreen 'fullboth)
+  (redraw-display)
   )
 
 (defun epresent-estimate-time ()
