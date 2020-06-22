@@ -350,11 +350,8 @@ EPRESENT_SHOW_AUTO is not t"
           (org-get-next-sibling))
     (cl-incf epresent-page-number))
   (epresent-current-page)
-  (epresent-slide-in-effect)
-<<<<<<< HEAD
   (epresent-show-file-auto)
-=======
->>>>>>> f6272bc60094e8c295a2445e92794c8bd798cb4f
+  (epresent-slide-in-effect)
   (epresent-show-indicators-maybe))
 
 (defun epresent-previous-page ()
@@ -628,6 +625,8 @@ EPRESENT_SHOW_AUTO is not t"
   ;; if any of the arguments is not set, look at properties:
   (if (not filename)
       (setq filename (org-entry-get nil "EPRESENT_SHOW_FILE")))
+  (if (not (file-exists-p filename))
+      (user-error (concat filename " does not exist")))
   (when (not size)
     (setq size (org-entry-get nil "EPRESENT_SHOW_SIZE"))
     ;; convert to number, as properties are strings:
