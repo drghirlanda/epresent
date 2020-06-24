@@ -1,4 +1,4 @@
-;;; epresent.el --- Simple presentation mode for Emacs Org-mode
+ ;;; epresent.el --- Simple presentation mode for Emacs Org-mode
 
 ;; Copyright (C) 2008 Tom Tromey <tromey@redhat.com>
 ;;               2010 Eric Schulte <schulte.eric@gmail.com>
@@ -98,6 +98,8 @@
 (defvar epresent-pretty-entities nil)
 (defvar epresent-page-number 0)
 
+(defvar epresent-user-x-pointer-shape)
+
 (defcustom epresent-indicators t
   "If not nil, display a dot in the top right corner if the
 current page has an EPRESENT_SHOW_FILE property, and display two
@@ -175,9 +177,15 @@ If nil then source blocks are initially hidden on slide change."
   "Hook run after starting a presentation."
   :type 'hook
   :group 'epresent)
+
 (defcustom epresent-stop-presentation-hook nil
   "Hook run before stopping a presentation."
   :type 'hook
+  :group 'epresent)
+
+(defcustom epresent-x-pointer-shape x-pointer-circle
+  "Mouse pointer shape during the presentation."
+  :type 'symbol
   :group 'epresent)
 
 (defvar epresent-frame-level 1)
@@ -208,7 +216,14 @@ If nil then source blocks are initially hidden on slide change."
                                         ))))
   (raise-frame epresent--frame)
   (select-frame-set-input-focus epresent--frame)
-  (set-face-background 'fringe "white")
+  ;; set fringe background to same as frame background 
+  (set-face-background 'fringe (cdr (assoc 'background-color (frame-parameters))))
+  ;; set mouse pointer to circle, to mimic laser pointer. save user variable
+  (setq epresent-user-x-pointer-shape x-pointer-shape)
+  (setq x-pointer-shape epresent-x-pointer-shape)
+  (setq void-text-area-pointer 'text)
+  ;; set mouse color (without changing it) to make pointer settings effective 
+  (set-mouse-color (cdr (assoc 'mouse-color (frame-parameters))))
   epresent--frame)
 
 ;; functions
@@ -429,7 +444,12 @@ EPRESENT_SHOW_AUTO is not t"
   (hack-local-variables)
   ;; delete all epresent overlays
   (epresent-clean-overlays)
-  (epresent-clean-fringe-overlays))
+  (epresent-clean-fringe-overlays)
+  ;; reset mouse pointer shape and color
+  (setq x-pointer-shape epresent-user-x-pointer-shape)
+  (setq void-text-area-pointer 'arrow)
+  ;; set mouse color (without changing it) to make pointer settings effective 
+  (set-mouse-color (cdr (assoc 'mouse-color (frame-parameters)))))
   
 (defun epresent-increase-font ()
   "Increase the presentation font size."
