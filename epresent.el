@@ -189,6 +189,11 @@ If nil then source blocks are initially hidden on slide change."
   :type 'symbol
   :group 'epresent)
 
+(defcustom epresent-tooltip-mode 0
+  "If 0, disable tooltips during presentation, otherwise enable."
+  :type 'bool
+  :group 'epresent)
+
 (defvar epresent-frame-level 1)
 
 (defvar epresent-src-block-toggle-state nil)
@@ -901,6 +906,8 @@ minibuffer."
     (epresent-mode)
     (set-buffer-modified-p nil)
     (setq epresent-presentation-window (selected-window))
+    ;; set/unset tooltips
+    (tooltip-mode epresent-tooltip-mode)
     (run-hooks 'epresent-start-presentation-hook)))
 
 (define-key org-mode-map [f5]  'epresent-run)
