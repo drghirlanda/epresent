@@ -98,7 +98,8 @@
 (defvar epresent-pretty-entities nil)
 (defvar epresent-page-number 0)
 
-(defvar epresent-user-x-pointer-shape)
+(defvar epresent-user-x-pointer-shape nil)
+(defvar epresent-user-x-sensitive-text-pointer-shape nil)
 
 (defcustom epresent-indicators t
   "If not nil, display a dot in the top right corner if the
@@ -220,7 +221,9 @@ If nil then source blocks are initially hidden on slide change."
   (set-face-background 'fringe (cdr (assoc 'background-color (frame-parameters))))
   ;; set mouse pointer to circle, to mimic laser pointer. save user variable
   (setq epresent-user-x-pointer-shape x-pointer-shape)
+  (setq epresent-user-x-sensitive-text-pointer-shape x-sensitive-text-pointer-shape)
   (setq x-pointer-shape epresent-x-pointer-shape)
+  (setq x-sensitive-text-pointer-shape epresent-x-pointer-shape)
   (setq void-text-area-pointer 'text)
   ;; set mouse color (without changing it) to make pointer settings effective 
   (set-mouse-color (cdr (assoc 'mouse-color (frame-parameters))))
@@ -447,6 +450,7 @@ EPRESENT_SHOW_AUTO is not t"
   (epresent-clean-fringe-overlays)
   ;; reset mouse pointer shape and color
   (setq x-pointer-shape epresent-user-x-pointer-shape)
+  (setq x-sensitive-text-pointer-shape epresent-user-x-sensitive-text-pointer-shape)
   (setq void-text-area-pointer 'arrow)
   ;; set mouse color (without changing it) to make pointer settings effective 
   (set-mouse-color (cdr (assoc 'mouse-color (frame-parameters)))))
