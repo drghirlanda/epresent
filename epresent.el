@@ -2,11 +2,12 @@
 
 ;; Copyright (C) 2008 Tom Tromey <tromey@redhat.com>
 ;;               2010 Eric Schulte <schulte.eric@gmail.com>
+;;               2020 Stefano Ghirlanda <drghirlanda@gmail.com>
 
-;; Authors: Tom Tromey <tromey@redhat.com>, Eric Schulte <schulte.eric@gmail.com>, Lee Hinman <lee@writequit.org>
+;; Authors: Tom Tromey <tromey@redhat.com>, Eric Schulte <schulte.eric@gmail.com>, Lee Hinman <lee@writequit.org>, Stefano Ghirlanda <drghirlanda@gmail.com>
 ;; URL: https://github.com/dakrone/epresent
 ;; Created: 12 Jun 2008
-;; Version: 1.0.0
+;; Version: 1.5.0
 ;; Keywords: gui
 ;; Package-Requires: ((org "8") (cl-lib "0.5"))
 
@@ -30,15 +31,16 @@
 
 ;;; Commentary:
 
-;; This is a simple presentation mode for Emacs. It works best in
+;; This is a presentation mode for Emacs. It works best in
 ;; Emacs >= 24, which has a nice font rendering engine.
 
 ;; To use, invoke `epresent-run' in an `org-mode' buffer. This will
-;; make a full-screen frame. Use n/p to navigate, or q to quit. Read
-;; below for more key bindings. Each top-level headline becomes a
-;; frame in the presentation (configure `EPRESENT_FRAME_LEVEL' to
-;; change this default). Org-mode markup is used to nicely display the
-;; buffer's contents.
+;; make a full-screen frame special key bindings and features for
+;; presentation. Use n/p to navigate, or q to quit. Read below for
+;; more key bindings. Each top-level headline becomes a frame in the
+;; presentation (configure `EPRESENT_FRAME_LEVEL' to change this
+;; default). Org-mode markup is used to nicely display the buffer's
+;; contents.
 
 ;;; Code:
 (require 'org)
@@ -48,7 +50,7 @@
 (require 'org-superstar)
 
 (defgroup epresent nil
-  "This is a simple presentation mode for Emacs."
+  "This is a presentation mode for Emacs."
   :group 'epresent)
 
 (defface epresent-title-face
@@ -97,7 +99,6 @@
 (defvar epresent-outline-ellipsis nil)
 (defvar epresent-pretty-entities nil)
 (defvar epresent-page-number 0)
-
 (defvar epresent-user-x-pointer-shape nil)
 (defvar epresent-user-x-sensitive-text-pointer-shape nil)
 
@@ -194,19 +195,32 @@ If nil then source blocks are initially hidden on slide change."
   :type 'bool
   :group 'epresent)
 
+(defcustom epresent-internal-border-width 50
+  "Set this variable to increase or decrease the
+border between the presented material and the edge of the
+screen."
+  :type 'integer
+  :group 'epresent)
+
+
 (defvar epresent-frame-level 1)
 
 (defvar epresent-src-block-toggle-state nil)
 
-(defvar epresent-show-filename nil)
+(defvar epresent-show-filename nil
+  "Filename shown in the auxiliary window. See
+  epresent-show-file.")
 
-(defvar epresent-aux-window nil)
+(defvar epresent-aux-window nil
+  "Auxiliary window for showing files. See epresent-show-file.")
 
-(defvar epresent-presentation-window nil)
+(defvar epresent-presentation-window nil
+  "The EPresent presentation window.")
 
 (defvar epresent-show-buffer nil)
 
 (defun epresent--get-frame ()
+  "Create and set up the EPresent frame."
   (unless (frame-live-p epresent--frame)
     (setq epresent--frame (make-frame '((minibuffer . nil)
                                         (title . "EPresent")
@@ -216,10 +230,10 @@ If nil then source blocks are initially hidden on slide change."
                                         (vertical-scroll-bars . nil)
                                         (left-fringe . 0)
                                         (right-fringe . 10)
-                                        (internal-border-width . 50)
 					(right-divider-width . 0)
                                         (cursor-type . nil)
                                         ))))
+  (set-frame-parameter epresent--frame 'internal-border-width epresent-internal-border-width)
   (raise-frame epresent--frame)
   (select-frame-set-input-focus epresent--frame)
   ;; set fringe background to same as frame background 
@@ -724,7 +738,7 @@ display."
   (if (org-entry-get nil "EPRESENT_SHOW_AUTO")
       (epresent-show-file)))
 
-(defun epresent-show-video (&optional filename mute)
+(defun epresent-show-video (&optional filename mute paused)
   "Show a video in fullscreen mode.
 
 FILENAME is the video filename. If not provided, the value of the
@@ -733,18 +747,25 @@ EPRESENT_SHOW_VIDEO property is used.
 If MUTE is non nil, the audio is muted. If not provided, the
 value of the EPRESENT_MUTE property is used.
 
+If PAUSE is non nil, the video starts paused. If not provided, the
+value of the EPRESENT_PAUSED property is used.
+
 This function uses vlc."
   (interactive)
   ;; if no filename or mute, try to get them from properties:
   (if (not filename)
       (setq filename (org-entry-get nil "EPRESENT_SHOW_VIDEO")))
+  (unless (file-exists-p filename)
+    (user-error (concat "cannot open " filename)))
   (if (not mute)
       (setq mute (org-entry-get nil "EPRESENT_MUTE")))
   (if mute
       (setq mute " --no-audio ")
     (setq mute ""))
   (set-frame-parameter nil 'fullscreen nil)
-  (shell-command (concat "cvlc -f --no-osd " mute filename))
+  (setq epresent-vlc-command (concat "cvlc -f --no-osd " mute filename))
+  (message (concat "Executing " epresent-vlc-command))
+  (shell-command epresent-vlc-command)
   (delete-other-windows)
   (set-frame-parameter nil 'fullscreen 'fullboth)
   (redraw-display)
@@ -803,8 +824,10 @@ minibuffer."
     (define-key map "r" 'epresent-refresh)
     (define-key map "R" 'redraw-display)
     (define-key map "g" 'epresent-refresh)
+    ;; navigate folded subheadings
     (define-key map "N" 'epresent-next-subheading)
     (define-key map "P" 'epresent-previous-subheading)
+    ;; show/hide images and videos
     (define-key map "i" 'epresent-show-file-or-advance)
     (define-key map "I" 'epresent-show-video)
     (define-key map "K" 'delete-other-windows)
