@@ -196,12 +196,11 @@ If nil then source blocks are initially hidden on slide change."
   :group 'epresent)
 
 (defcustom epresent-internal-border-width 50
-  "Set this variable to increase or decrease the
+  "NOT WORKING Set this variable to increase or decrease the
 border between the presented material and the edge of the
 screen."
   :type 'integer
   :group 'epresent)
-
 
 (defvar epresent-frame-level 1)
 
@@ -229,11 +228,11 @@ screen."
                                         (tool-bar-lines . 0)
                                         (vertical-scroll-bars . nil)
                                         (left-fringe . 0)
-                                        (right-fringe . 10)
+					(right-fringe . 10)
 					(right-divider-width . 0)
                                         (cursor-type . nil)
+					(internal-border-width . 50)
                                         ))))
-  (set-frame-parameter epresent--frame 'internal-border-width epresent-internal-border-width)
   (raise-frame epresent--frame)
   (select-frame-set-input-focus epresent--frame)
   ;; set fringe background to same as frame background 
@@ -291,7 +290,6 @@ screen."
   "Present the current outline heading."
   (interactive)
   (when epresent-aux-window
-    (message "deleting aux window")
     (delete-window epresent-aux-window)
     (setq epresent-aux-window nil))
   (if (org-current-level)
@@ -755,7 +753,7 @@ This function uses vlc."
   ;; if no filename or mute, try to get them from properties:
   (if (not filename)
       (setq filename (org-entry-get nil "EPRESENT_SHOW_VIDEO")))
-  (unless (file-exists-p filename)
+  (unless (and filename (file-exists-p filename))
     (user-error (concat "cannot open " filename)))
   (if (not mute)
       (setq mute (org-entry-get nil "EPRESENT_MUTE")))
