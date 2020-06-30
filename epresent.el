@@ -643,7 +643,11 @@ EPRESENT_SHOW_AUTO is not t"
 
 (defun epresent-show-file (&optional filename size below)
   "Show FILENAME file by splitting the buffer. If FILENAME is not
-  given, the value of the EPRESENT_SHOW_FILE property is used.
+  given, the value of the EPRESENT_SHOW_FILE property is used. In
+  either case, leading [[ and ]] are stripped, so that FILENAME
+  can be an org-mode link. This is convenient especially when
+  FILENAME is given as a property, because then it can be easily
+  inspected from org-mode.
 
   If BELOW is nil (default), the new buffer is to the right of
   the current buffer, otherwise it is below. If not provided, the
@@ -666,6 +670,9 @@ EPRESENT_SHOW_AUTO is not t"
   ;; if any of the arguments is not set, look at properties:
   (if (not filename)
       (setq filename (org-entry-get nil "EPRESENT_SHOW_FILE")))
+  ;; remove [[ ]] in case they are there
+  (setq filename (replace-regexp-in-string "^\\[\\[" "" filename))
+  (setq filename (replace-regexp-in-string "\\]\\]$" "" filename))
   (if (not (file-exists-p filename))
       (user-error (concat filename " does not exist")))
   (when (not size)
