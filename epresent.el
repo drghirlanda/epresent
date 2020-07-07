@@ -298,7 +298,7 @@ screen."
   (epresent-top)
   (dotimes (_ (1- num)) (epresent-next-page)))
 
-(defun epresent-current-page ()
+(defun epresent-current-page (&optional backward)
   "Present the current outline heading."
   (interactive)
   (when epresent-aux-window
@@ -309,7 +309,9 @@ screen."
 	(epresent-goto-top-level)
 	;; skipe a TITLE PAGE heading, used for introductory speaker notes
 	(if (string= (downcase (org-entry-get nil "ITEM")) "title page")
-	    (epresent-next-page t))
+	    (if backward
+		(epresent-previous-page t)
+	      (epresent-next-page t)))
 	(org-narrow-to-subtree)
 	(outline-show-all)
 	(outline-hide-body)
@@ -411,8 +413,9 @@ a TITLE PAGE heading."
   (unless skip
     (epresent-current-page)))
 
-(defun epresent-previous-page ()
-  "Present the previous outline heading."
+(defun epresent-previous-page (&optional skip)
+  "Present the previous outline heading. See epresent-next-page
+for the SKIP argument."
   (interactive)
   (epresent-goto-top-level)
   (widen)
@@ -423,11 +426,7 @@ a TITLE PAGE heading."
     (org-get-last-sibling))
   (when (> epresent-page-number 1)
     (cl-decf epresent-page-number))
-  (epresent-current-page)
-  (epresent-show-file-auto)
-  (epresent-slide-in-effect)
-  (epresent-show-indicators-maybe)
-  (epresent-position-notes))
+  (epresent-current-page t))
 
 (defun epresent-position-notes ()
   "Position notes buffer at current heading."
