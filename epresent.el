@@ -1,4 +1,4 @@
- ;;; epresent.el --- Simple presentation mode for Emacs Org-mode
+;;; epresent.el --- Simple presentation mode for Emacs Org-mode
 
 ;; Copyright (C) 2008 Tom Tromey <tromey@redhat.com>
 ;;               2010 Eric Schulte <schulte.eric@gmail.com>
@@ -202,7 +202,19 @@ screen."
   :type 'integer
   :group 'epresent)
 
+(defcustom epresent-speaker-notes t
+  "If not nil, collect all speaker notes in an '*EPresent Notes*'
+  buffer. The buffer is displayed in a new frame when the
+  presentation starts. The frame can be manually moved to a
+  different screen to look at speaker notes during the
+  presentation. The notes buffer is synchronized to show the
+  notes for the page currently displayed."
+  :type 'string
+  :group 'epresent)
+
 (defvar epresent-frame-level 1)
+
+(defvar epresent-notes-buffer nil)
 
 (defvar epresent-src-block-toggle-state nil)
 
@@ -294,17 +306,25 @@ screen."
     (setq epresent-aux-window nil))
   (if (org-current-level)
       (progn
-        (epresent-goto-top-level)
-        (org-narrow-to-subtree)
-        (outline-show-all)
-        (outline-hide-body)
-        (when (>= (org-reduced-level (org-current-level))
-                  epresent-frame-level)
+	(epresent-goto-top-level)
+	;; skipe a TITLE PAGE heading, used for introductory speaker notes
+	(if (string= (downcase (org-entry-get nil "ITEM")) "title page")
+	    (epresent-next-page t))
+	(org-narrow-to-subtree)
+	(outline-show-all)
+	(outline-hide-body)
+	(when (>= (org-reduced-level (org-current-level))
+		  epresent-frame-level)
 	  (org-show-subtree)
 	  (org-set-visibility-according-to-property) ;; folds children
-          (let ((epresent-src-block-toggle-state
-                 (if epresent-src-blocks-visible :show :hide)))
-            (epresent-toggle-hide-src-blocks))))
+	  (let ((epresent-src-block-toggle-state
+		 (if epresent-src-blocks-visible :show :hide)))
+	    (epresent-toggle-hide-src-blocks)))
+	(epresent-show-file-auto)
+	(epresent-slide-in-effect)
+	(epresent-show-indicators-maybe)
+	(epresent-position-notes)
+	)
     ;; before first headline -- fold up subtrees as TOC
     (org-cycle '(4))))
 
@@ -338,9 +358,7 @@ EPRESENT_SHOW_AUTO is not t"
       (add-to-list 'epresent-fringe-overlays (make-overlay (point) (point)))
       (overlay-put (car epresent-fringe-overlays)
 		   'before-string
-		   (propertize " " 'display '(right-fringe hollow-square))))
-    ))
-
+		   (propertize " " 'display '(right-fringe hollow-square))))))
   
 (defun epresent-slide-in-effect ()
   "Apply slide-in effect."
@@ -372,10 +390,16 @@ EPRESENT_SHOW_AUTO is not t"
   (widen)
   (goto-char (point-min))
   (setq epresent-page-number 1)
+  ;; rewind notes buffer if present
+  (if epresent-notes-buffer
+      (with-current-buffer epresent-notes-buffer
+	(goto-char (point-min))))
   (epresent-current-page))
 
-(defun epresent-next-page ()
-  "Present the next outline heading."
+(defun epresent-next-page (&optional skip)
+  "Advance to the next outline heading. If SKIP is nil, the
+page is advanced but not displayed. This feature is used to skip
+a TITLE PAGE heading."
   (interactive)
   (epresent-goto-top-level)
   (widen)
@@ -384,10 +408,8 @@ EPRESENT_SHOW_AUTO is not t"
             (outline-next-heading)
           (org-get-next-sibling))
     (cl-incf epresent-page-number))
-  (epresent-current-page)
-  (epresent-show-file-auto)
-  (epresent-slide-in-effect)
-  (epresent-show-indicators-maybe))
+  (unless skip
+    (epresent-current-page)))
 
 (defun epresent-previous-page ()
   "Present the previous outline heading."
@@ -401,7 +423,26 @@ EPRESENT_SHOW_AUTO is not t"
     (org-get-last-sibling))
   (when (> epresent-page-number 1)
     (cl-decf epresent-page-number))
-  (epresent-current-page))
+  (epresent-current-page)
+  (epresent-show-file-auto)
+  (epresent-slide-in-effect)
+  (epresent-show-indicators-maybe)
+  (epresent-position-notes))
+
+(defun epresent-position-notes ()
+  "Position notes buffer at current heading."
+  (interactive)
+  (when epresent-notes-buffer
+    (setq current-heading (org-entry-get nil "ITEM"))
+    (setq find-me
+	  (concat "^\\*[ \t]+" (regexp-quote current-heading)))
+    (with-selected-window (get-buffer-window epresent-notes-buffer t)
+      (widen)
+      (goto-char (point-min))
+      (re-search-forward find-me)
+      (goto-char (point))
+      (org-narrow-to-subtree)
+      (recenter 0))))
 
 (defun epresent-next-subheading ()
   "Advance to next subheading, unhiding it if hidden."
@@ -470,7 +511,11 @@ EPRESENT_SHOW_AUTO is not t"
   (setq x-sensitive-text-pointer-shape epresent-user-x-sensitive-text-pointer-shape)
   (setq void-text-area-pointer 'arrow)
   ;; set mouse color (without changing it) to make pointer settings effective 
-  (set-mouse-color (cdr (assoc 'mouse-color (frame-parameters)))))
+  (set-mouse-color (cdr (assoc 'mouse-color (frame-parameters))))
+  ;; kill notes buffer and associated frame, if present
+  (when (bufferp epresent-notes-buffer)
+    (delete-frame (window-frame (get-buffer-window epresent-notes-buffer)))
+    (kill-buffer epresent-notes-buffer)))
   
 (defun epresent-increase-font ()
   "Increase the presentation font size."
@@ -776,6 +821,46 @@ This function uses vlc."
   (redraw-display)
   )
 
+(defun epresent-make-notes-buffer ()
+  "Create a buffer with speaker notes only, and display it in a
+new frame."
+  (interactive)
+  ;; first, collect speaker notes from presentation buffer 
+  (setq speaker-notes "")
+  (save-excursion
+    (goto-char (point-min))
+    (while (< (point) (point-max))
+      (org-next-visible-heading 1)
+      (setq current-heading (org-entry-get nil "ITEM"))
+      ;; 1-st level heading is stored to serve as notes heading:
+      (if (= (org-current-level) 1)
+	  (setq speaker-notes
+		(concat speaker-notes "* " current-heading "\n")))
+      ;; collect content of 'Speaker notes' headings
+      (when (string= current-heading "Speaker notes")
+	(org-mark-subtree)
+	(setq speaker-notes
+	      (concat speaker-notes
+		      (buffer-substring (point) (mark))
+		      "\n")))))
+  (deactivate-mark)
+  ;; second, delete notes buffer if existing
+  (if (bufferp epresent-notes-buffer) 
+      (kill-buffer epresent-notes-buffer))
+  ;; third, display notes in a new buffer and frame
+  (setq epresent-notes-buffer (generate-new-buffer "*EPresent Notes*"))
+  (with-current-buffer epresent-notes-buffer
+    (erase-buffer)
+    (org-mode)
+    (insert speaker-notes)
+    (goto-char (point-min))
+    (while (re-search-forward "\\*\\* ?.* Speaker [nN]otes[ \t]*\n" nil t)
+      (replace-match ""))
+    (goto-char (point-min))
+    (org-narrow-to-subtree)
+    )
+  (switch-to-buffer-other-frame epresent-notes-buffer))
+
 (defun epresent-estimate-time ()
   "Estimates the time needed to read all speaker notes, assuming
 a reading speed of 125 words per minute. The estimated time and
@@ -879,7 +964,9 @@ minibuffer."
   (org-map-entries (lambda ()
 		     (when (or
 			    (org-entry-get nil "EPRESENT_HIDE")
-			    (string= (downcase (org-entry-get nil "ITEM")) "speaker notes"))
+			    (string= (downcase (org-entry-get nil "ITEM")) "speaker notes")
+			    (string= (downcase (org-entry-get nil "ITEM")) "title page")
+			    )
 		       (org-mark-subtree)
 		       ;; we make things insvisile only until mark-1
 		       ;; to leave a newline visible, as a separator
@@ -936,6 +1023,8 @@ minibuffer."
     (setq epresent-presentation-window (selected-window))
     ;; set/unset tooltips
     (tooltip-mode epresent-tooltip-mode)
+    ;; create speaker notes
+    (when epresent-speaker-notes (epresent-make-notes-buffer))
     (run-hooks 'epresent-start-presentation-hook)))
 
 (define-key org-mode-map [f5]  'epresent-run)
