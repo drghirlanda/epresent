@@ -103,9 +103,11 @@
 (defvar epresent-user-x-sensitive-text-pointer-shape nil)
 
 (defcustom epresent-indicators t
-  "If not nil, display a dot in the top right corner if the
-current page has an EPRESENT_SHOW_FILE property, and display two
-dots if it has an EPRESENT_SHOW_VIDEO property."
+  "If not nil, display a black square in right fringe if the
+current page has an EPRESENT_SHOW_FILE property, and display an
+empty square if it has an EPRESENT_SHOW_VIDEO property. When
+showing PDF files, an arrow in the right fringe indicates that
+there are more pages to show."
   :type 'boolean
   :group 'epresent)
 
@@ -140,13 +142,6 @@ are used for the slide-in animation."
 (defcustom epresent-format-latex-scale 4
   "A scaling factor for the size of the images generated from LaTeX."
   :type 'number
-  :group 'epresent)
-
-(defcustom epresent-internal-border-width 75
-  "The internal border will be the number of pixels of margin
-between your text and the screen borders. Increase (decrease) to
-leave more (less)."
-  :type 'integer
   :group 'epresent)
 
 (defcustom epresent-hide-todos t
