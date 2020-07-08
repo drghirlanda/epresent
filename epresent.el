@@ -207,6 +207,16 @@ screen."
   :type 'string
   :group 'epresent)
 
+(defcustom epresent-wpm 150
+  "Words-per-minute factor used to estimate a presentation' speaking
+time."
+  :type 'integer
+  :group 'epresent)
+
+(defvar epresent-mouse-visible t
+  "Whether the mouse is currentyl visible or not. Used by
+  epresent-toggle-mouse")
+
 (defvar epresent-frame-level 1)
 
 (defvar epresent-notes-buffer nil)
@@ -244,7 +254,7 @@ screen."
   (select-frame-set-input-focus epresent--frame)
   ;; set fringe background to same as frame background 
   (set-face-background 'fringe (cdr (assoc 'background-color (frame-parameters))))
-  ;; set mouse pointer to circle, to mimic laser pointer. save user variable
+  ;; set mouse pointer shape. save user variable
   (setq epresent-user-x-pointer-shape x-pointer-shape)
   (setq epresent-user-x-sensitive-text-pointer-shape x-sensitive-text-pointer-shape)
   (setq x-pointer-shape epresent-x-pointer-shape)
@@ -856,10 +866,11 @@ new frame."
   (switch-to-buffer-other-frame epresent-notes-buffer))
 
 (defun epresent-estimate-time ()
-  "Estimates the time needed to read all speaker notes, assuming
-a reading speed of 125 words per minute. The estimated time and
-the number of words in speaker notes are displayed in the
-minibuffer."
+  "Estimates the time needed to read all speaker notes. The
+estimated time and the number of words in speaker notes are
+displayed in the minibuffer. A reading speed of 150 words per
+minute is used by default. To change it, customize the variable
+epresent-wpm. "
   (interactive)
   (setq speaker-words 0)
   (org-map-entries
@@ -871,13 +882,31 @@ minibuffer."
 	 (setq speaker-words
 	       (+ speaker-words (count-words (point) (mark))))
 	 (deactivate-mark)))))
-  (setq speaker-time (ceiling (/ (float speaker-words) 125)))
+  (setq speaker-time (/ (float speaker-words) epresent-wpm))
+  ;; round to the half minute
+  (setq speaker-time (/ (ceiling (* speaker-time 2)) 2))
   (message (concat
 	    "Estimated speaking time in minutes: "
 	    (number-to-string speaker-time)
 	    " ("
 	    (number-to-string speaker-words)
 	    " words)")))
+
+(defun epresent-toggle-mouse ()
+  "Show/hode mouse pointer."
+  (interactive)
+  (if epresent-mouse-visible
+      (progn
+	(setq x-pointer-shape x-pointer-invisible)
+	(setq x-sensitive-text-pointer-shape x-pointer-invisible)
+	(setq void-text-area-pointer 'text))
+    (progn
+      (setq x-pointer-shape epresent-x-pointer-shape)
+      (setq x-sensitive-text-pointer-shape epresent-x-pointer-shape)
+      (setq void-text-area-pointer 'text)))
+  ;; set mouse color (without changing it) to make pointer settings
+  ;; effective
+  (set-mouse-color (cdr (assoc 'mouse-color (frame-parameters)))))
 
 (defvar epresent-mode-map
   (let ((map (make-keymap)))
@@ -914,7 +943,8 @@ minibuffer."
     ;; show/hide images and videos
     (define-key map "i" 'epresent-show-file-or-advance)
     (define-key map "I" 'epresent-show-video)
-    (define-key map "K" 'delete-other-windows)
+    ;; show/hide mouse pointer
+    (define-key map "m" 'epresent-toggle-mouse)
     ;; global controls
     (define-key map "q" 'epresent-quit)
     (define-key map "1" 'epresent-top)
