@@ -180,7 +180,7 @@ If nil then source blocks are initially hidden on slide change."
   :type 'hook
   :group 'epresent)
 
-(defcustom epresent-x-pointer-shape x-pointer-circle
+(defcustom epresent-x-pointer-shape x-pointer-dot
   "Mouse pointer shape during the presentation."
   :type 'symbol
   :group 'epresent)
@@ -451,6 +451,9 @@ for the SKIP argument."
 (defun epresent-next-subheading ()
   "Advance to next subheading, unhiding it if hidden."
   (interactive)
+  (when (and (org-entry-get nil "EPRESENT_STEPWISE")
+	   (> (org-current-level) 1))
+      (outline-hide-subtree))
   (org-next-visible-heading 1)
   (org-show-subtree))
 
