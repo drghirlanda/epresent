@@ -248,7 +248,7 @@ time."
 					(right-fringe . 10)
 					(right-divider-width . 0)
                                         (cursor-type . nil)
-					(internal-border-width . 50)
+					(internal-border-width . 75)
                                         ))))
   (raise-frame epresent--frame)
   (select-frame-set-input-focus epresent--frame)
@@ -333,7 +333,9 @@ time."
 	(epresent-position-notes)
 	)
     ;; before first headline -- fold up subtrees as TOC
-    (org-cycle '(4))))
+    (org-cycle '(4)))
+  ; this is sometimes useful:
+  (redraw-display))
 
 (defun epresent-show-indicators-maybe ()
   "Show indicators if epresent-indicators is true and
@@ -868,6 +870,36 @@ new frame."
     )
   (switch-to-buffer-other-frame epresent-notes-buffer))
 
+;;; export functions
+
+(require 'ox)
+(require 'ox-org)
+
+(defun epresent-latex-property-drawer (blob contents _info)
+  ""
+  (setq elpd-in (org-export-expand blob contents t))
+  (when (string-match "^\s*:EPRESENT_SHOW_FILE:\s+\\(.+\\)" elpd-in)
+    (setq elpd-filename (match-string 1 elpd-in))
+    (if (string= (file-name-extension elpd-filename) "pdf")
+	(setq elpd-out (concat "\n\\includepdf[pages={1-}]{" elpd-filename "}\n"))
+      (setq elpd-out (concat "\n\\includegraphicx{" elpd-filename "}\n"))))
+  elpd-out)
+
+(org-export-define-derived-backend 'epresent 'latex
+  :translate-alist
+  '((property-drawer . epresent-latex-property-drawer))
+  :menu-entry
+  '(?E "EPresent to LaTeX"
+       ((?L "As LaTeX buffer" org-latex-export-as-latex)
+	(?l "As LaTeX file" org-latex-export-to-latex)
+	(?p "As PDF file" org-latex-export-to-pdf)
+	(?o "As PDF file and open"
+	    (lambda (a s v b)
+	      (if a (org-latex-export-to-pdf t s v b)
+		(org-open-file (org-latex-export-to-pdf nil s v b))))))))
+
+;;; end export functions
+
 (defun epresent-estimate-time ()
   "Estimates the time needed to read all speaker notes. The
 estimated time and the number of words in speaker notes are
@@ -893,7 +925,7 @@ epresent-wpm. "
 	    (number-to-string speaker-time)
 	    " ("
 	    (number-to-string speaker-words)
-	    " words)")))
+	    " words)")))  
 
 (defun epresent-toggle-mouse ()
   "Show/hode mouse pointer."
